@@ -1,0 +1,32 @@
+# 忽略构建输出文件夹
+bin/
+obj/
+
+# 用户相关配置（IDE 生成）
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code 工作区设置（可选忽略）
+.vscode/
+
+# Mac 系统文件
+.DS_Store
+
+# Windows 缓存文件
+Thumbs.db
+ehthumbs.db
+
+# Rider 项目配置
+.idea/
+
+# ASP.NET 调试配置
+*.vspscc
+*.vssscc
+.vs/
+
+# NuGet 缓存
+*.nupkg
+*.snupkg
+packages/
