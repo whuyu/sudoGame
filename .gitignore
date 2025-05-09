@@ -26,3 +26,6 @@ ehthumbs.db
 *.nupkg
 *.snupkg
 packages/
+
+obj/
+bin/
