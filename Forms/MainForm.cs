@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
 using System.Drawing.Drawing2D;
+using System.Diagnostics;
 
 namespace SudokuGame.Forms
 {
@@ -13,7 +14,10 @@ namespace SudokuGame.Forms
         private Button checkButton;
         private Button startTimerButton;
         private Label timerLabel;
-        private System.Windows.Forms.Timer gameTimer;
+        private Panel timerPanel;
+        private Label timerTitleLabel;
+        private Stopwatch gameStopwatch;
+        private System.Windows.Forms.Timer displayTimer;
         private int secondsElapsed;
         private Random random = new Random();
         private bool isGameStarted = false;
@@ -37,7 +41,7 @@ namespace SudokuGame.Forms
         private void InitializeComponent()
         {
             this.Text = "数独游戏";
-            this.Size = new Size(1000, 800);
+            this.Size = new Size(1200, 1000);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.FromArgb(240, 240, 240);
             this.Font = new Font("微软雅黑", 12F);
@@ -52,7 +56,7 @@ namespace SudokuGame.Forms
                 Font = new Font("微软雅黑", 24F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(51, 51, 51),
                 TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(400, 50),
+                Size = new Size(400, 60),
                 Location = new Point((this.ClientSize.Width - 400) / 2, 20)
             };
             this.Controls.Add(titleLabel);
@@ -88,11 +92,11 @@ namespace SudokuGame.Forms
                 }
             }
 
-            // 创建控制面板
+            // 创建控制面板，放在计时器下方
             controlPanel = new Panel
             {
                 Size = new Size(600, 80),
-                Location = new Point((this.ClientSize.Width - 600) / 2, 650),
+                Location = new Point((this.ClientSize.Width - 600) / 2, gamePanel.Bottom + 140), // 调整位置到计时器下方
                 BackColor = Color.Transparent
             };
             this.Controls.Add(controlPanel);
@@ -119,7 +123,7 @@ namespace SudokuGame.Forms
             {
                 Text = text,
                 Size = new Size(150, 45),
-                Location = new Point(30 + index * 180, 15),
+                Location = new Point(30 + index * 180, 30),
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("微软雅黑", 12F, FontStyle.Bold),
                 BackColor = Color.FromArgb(64, 158, 255),
@@ -159,30 +163,92 @@ namespace SudokuGame.Forms
 
         private void SetupTimer()
         {
-            gameTimer = new System.Windows.Forms.Timer
+            // 创建计时器面板
+            timerPanel = new Panel
             {
-                Interval = 1000
+                Size = new Size(300, 100),
+                Location = new Point((this.ClientSize.Width - 300) / 2, gamePanel.Bottom + 20), // 相对于游戏面板定位
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.None
             };
-            gameTimer.Tick += GameTimer_Tick;
+            timerPanel.Paint += TimerPanel_Paint;
+            this.Controls.Add(timerPanel);
 
-            timerLabel = new Label
+            // 添加计时器标题
+            timerTitleLabel = new Label
             {
-                Text = "用时: 00:00",
-                Font = new Font("微软雅黑", 14F),
-                ForeColor = Color.FromArgb(51, 51, 51),
-                Size = new Size(200, 30),
-                Location = new Point((this.ClientSize.Width - 200) / 2, 600),
+                Text = "用时",
+                Font = new Font("微软雅黑", 12F),
+                ForeColor = Color.FromArgb(102, 102, 102),
+                Size = new Size(300, 30),
+                Location = new Point(0, 0),
                 TextAlign = ContentAlignment.MiddleCenter
             };
-            this.Controls.Add(timerLabel);
+            timerPanel.Controls.Add(timerTitleLabel);
+
+            // 创建计时显示标签
+            timerLabel = new Label
+            {
+                Text = "00:00:000",
+                Font = new Font("Consolas", 24F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(64, 158, 255),
+                Size = new Size(300, 50),
+                Location = new Point(0, 30),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            timerPanel.Controls.Add(timerLabel);
+
+            // 创建高精度计时器
+            gameStopwatch = new Stopwatch();
+            
+            // 创建显示更新计时器（100Hz刷新率）
+            displayTimer = new System.Windows.Forms.Timer
+            {
+                Interval = 10 // 10ms，即0.01秒
+            };
+            displayTimer.Tick += DisplayTimer_Tick;
         }
 
-        private void GameTimer_Tick(object sender, EventArgs e)
+        private void TimerPanel_Paint(object sender, PaintEventArgs e)
         {
-            secondsElapsed++;
-            int minutes = secondsElapsed / 60;
-            int seconds = secondsElapsed % 60;
-            timerLabel.Text = $"用时: {minutes:D2}:{seconds:D2}";
+            using (var path = new GraphicsPath())
+            {
+                var rect = new Rectangle(0, 0, timerPanel.Width - 1, timerPanel.Height - 1);
+                int radius = 10;
+                path.AddArc(rect.X, rect.Y, radius * 2, radius * 2, 180, 90);
+                path.AddArc(rect.Right - radius * 2, rect.Y, radius * 2, radius * 2, 270, 90);
+                path.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
+                path.AddArc(rect.X, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
+                path.CloseFigure();
+
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                
+                // 绘制阴影
+                using (var shadowBrush = new SolidBrush(Color.FromArgb(20, 0, 0, 0)))
+                {
+                    e.Graphics.TranslateTransform(2, 2);
+                    e.Graphics.FillPath(shadowBrush, path);
+                    e.Graphics.TranslateTransform(-2, -2);
+                }
+
+                // 绘制背景
+                e.Graphics.FillPath(Brushes.White, path);
+                
+                // 绘制边框
+                using (var pen = new Pen(Color.FromArgb(230, 230, 230), 1))
+                {
+                    e.Graphics.DrawPath(pen, path);
+                }
+            }
+        }
+
+        private void DisplayTimer_Tick(object sender, EventArgs e)
+        {
+            if (gameStopwatch.IsRunning)
+            {
+                TimeSpan elapsed = gameStopwatch.Elapsed;
+                timerLabel.Text = $"{elapsed.Minutes:D2}:{elapsed.Seconds:D2}:{elapsed.Milliseconds:D3}";
+            }
         }
 
         private void StartTimerButton_Click(object sender, EventArgs e)
@@ -190,13 +256,15 @@ namespace SudokuGame.Forms
             if (!isGameStarted)
             {
                 isGameStarted = true;
-                gameTimer.Start();
+                gameStopwatch.Start();
+                displayTimer.Start();
                 startTimerButton.Text = "暂停";
                 EnableAllCells(true);
             }
             else
             {
-                gameTimer.Stop();
+                gameStopwatch.Stop();
+                displayTimer.Stop();
                 startTimerButton.Text = "继续";
                 isGameStarted = false;
                 EnableAllCells(false);
@@ -219,9 +287,9 @@ namespace SudokuGame.Forms
 
         private void GenerateNewGame()
         {
-            secondsElapsed = 0;
-            timerLabel.Text = "用时: 00:00";
-            gameTimer.Stop();
+            gameStopwatch.Reset();
+            displayTimer.Stop();
+            timerLabel.Text = "00:00:000";
             isGameStarted = false;
             startTimerButton.Text = "开始填写";
 
@@ -357,9 +425,15 @@ namespace SudokuGame.Forms
 
             if (isCorrect)
             {
-                gameTimer.Stop();
-                MessageBox.Show($"恭喜！你已经完成了数独！\n用时: {timerLabel.Text}", "成功", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                gameStopwatch.Stop();
+                displayTimer.Stop();
+                TimeSpan finalTime = gameStopwatch.Elapsed;
+                MessageBox.Show(
+                    $"恭喜！你已经完成了数独！\n用时: {finalTime.Minutes:D2}:{finalTime.Seconds:D2}:{finalTime.Milliseconds:D3}", 
+                    "成功", 
+                    MessageBoxButtons.OK, 
+                    MessageBoxIcon.Information
+                );
             }
             else
             {

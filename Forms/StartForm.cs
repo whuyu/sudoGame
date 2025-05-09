@@ -19,7 +19,7 @@ namespace SudokuGame.Forms
         private void InitializeComponent()
         {
             this.Text = "数独游戏";
-            this.Size = new Size(800, 600);
+            this.Size = new Size(1000, 800);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.FromArgb(240, 240, 240);
             this.Paint += StartForm_Paint;
@@ -31,11 +31,11 @@ namespace SudokuGame.Forms
             titleLabel = new Label
             {
                 Text = "数独游戏",
-                Font = new Font("微软雅黑", 36, FontStyle.Bold),
+                Font = new Font("微软雅黑", 46, FontStyle.Bold),
                 ForeColor = Color.FromArgb(51, 51, 51),
                 TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(400, 80),
-                Location = new Point((this.ClientSize.Width - 400) / 2, 150)
+                Size = new Size(600, 120),
+                Location = new Point((this.ClientSize.Width-600) / 2, 150)
             };
             this.Controls.Add(titleLabel);
 
@@ -43,9 +43,9 @@ namespace SudokuGame.Forms
             startButton = new Button
             {
                 Text = "开始游戏",
-                Font = new Font("微软雅黑", 16, FontStyle.Bold),
-                Size = new Size(200, 60),
-                Location = new Point((this.ClientSize.Width - 200) / 2, 300),
+                Font = new Font("微软雅黑", 18, FontStyle.Bold),
+                Size = new Size(240, 60),
+                Location = new Point((this.ClientSize.Width - 240) / 2, 300),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(64, 158, 255),
                 ForeColor = Color.White,
