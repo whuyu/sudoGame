@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 
 namespace SudokuGame.Forms
 {
@@ -9,17 +10,72 @@ namespace SudokuGame.Forms
     {
         private Label titleLabel;
         private Button startButton;
+        
+        // 基准尺寸（设计时的窗体大小）
+        private readonly Size baseSize = new Size(1000, 800);
+        // 原始字体大小
+        private float baseTitleFontSize = 46f;
+        private float baseButtonFontSize = 18f;
 
         public StartForm()
         {
             InitializeComponent();
+            this.AutoScaleMode = AutoScaleMode.Dpi;
+            this.Load += StartForm_Load;
+            this.Resize += (s, e) => UpdateFontScaling();
             SetupUI();
+        }
+
+        private void StartForm_Load(object sender, EventArgs e)
+        {
+            // 记录控件原始字体
+            titleLabel.Tag = titleLabel.Font;
+            startButton.Tag = startButton.Font;
+            UpdateFontScaling();
+        }
+
+        private void UpdateFontScaling()
+        {
+            // 计算缩放比例（取宽高比例较小值保持内容完整）
+            float scaleX = (float)this.ClientSize.Width / baseSize.Width;
+            float scaleY = (float)this.ClientSize.Height / baseSize.Height;
+            float scaleFactor = Math.Min(scaleX, scaleY);
+
+            // 设置最小/最大缩放限制
+            scaleFactor = Math.Max(0.5f, Math.Min(scaleFactor, 2f));
+
+            // 更新标题字体
+            Font originalTitleFont = (Font)titleLabel.Tag;
+            float newTitleSize = baseTitleFontSize * scaleFactor;
+            titleLabel.Font = new Font(originalTitleFont.FontFamily, newTitleSize, originalTitleFont.Style);
+
+            // 更新按钮字体
+            Font originalButtonFont = (Font)startButton.Tag;
+            float newButtonSize = baseButtonFontSize * scaleFactor;
+            startButton.Font = new Font(originalButtonFont.FontFamily, newButtonSize, originalButtonFont.Style);
+
+            // 调整控件位置（保持居中）
+            titleLabel.Location = new Point(
+                (this.ClientSize.Width - titleLabel.Width) / 2,
+                (int)(150 * scaleFactor)
+            );
+
+            startButton.Location = new Point(
+                (this.ClientSize.Width - startButton.Width) / 2,
+                (int)(300 * scaleFactor)
+            );
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+            base.OnPaint(e);
         }
 
         private void InitializeComponent()
         {
             this.Text = "数独游戏";
-            this.Size = new Size(1000, 800);
+            this.Size = baseSize;
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.FromArgb(240, 240, 240);
             this.Paint += StartForm_Paint;
@@ -31,11 +87,10 @@ namespace SudokuGame.Forms
             titleLabel = new Label
             {
                 Text = "数独游戏",
-                Font = new Font("微软雅黑", 46, FontStyle.Bold),
+                Font = new Font("微软雅黑", baseTitleFontSize, FontStyle.Bold),
                 ForeColor = Color.FromArgb(51, 51, 51),
                 TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(600, 120),
-                Location = new Point((this.ClientSize.Width-600) / 2, 150)
+                AutoSize = true
             };
             this.Controls.Add(titleLabel);
 
@@ -43,13 +98,12 @@ namespace SudokuGame.Forms
             startButton = new Button
             {
                 Text = "开始游戏",
-                Font = new Font("微软雅黑", 18, FontStyle.Bold),
-                Size = new Size(240, 60),
-                Location = new Point((this.ClientSize.Width - 240) / 2, 300),
+                Font = new Font("微软雅黑", baseButtonFontSize, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(64, 158, 255),
                 ForeColor = Color.White,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                AutoSize = true
             };
             startButton.FlatAppearance.BorderSize = 0;
             startButton.MouseEnter += (s, e) => startButton.BackColor = Color.FromArgb(58, 142, 230);
@@ -64,8 +118,7 @@ namespace SudokuGame.Forms
                 Font = new Font("微软雅黑", 10),
                 ForeColor = Color.FromArgb(153, 153, 153),
                 TextAlign = ContentAlignment.MiddleCenter,
-                Size = new Size(200, 30),
-                Location = new Point((this.ClientSize.Width - 200) / 2, this.ClientSize.Height - 50)
+                AutoSize = true
             };
             this.Controls.Add(copyrightLabel);
         }
