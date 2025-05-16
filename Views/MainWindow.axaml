@@ -1,0 +1,140 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="SudokuGame.Views.MainWindow"
+        Title="数独游戏"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 左侧导航栏 -->
+        <Border Grid.Column="0" Background="White" BoxShadow="2 0 10 0 #15000000">
+            <StackPanel>
+                <TextBlock Text="数独游戏" 
+                         FontSize="24" 
+                         FontWeight="Bold" 
+                         HorizontalAlignment="Center"
+                         Margin="0,20,0,30"/>
+
+                <ListBox x:Name="NavList" 
+                        Background="Transparent"
+                        BorderThickness="0">
+                    <ListBoxItem Content="排行榜"/>
+                    <ListBoxItem Content="随机一题"/>
+                    <ListBoxItem Content="我的题库"/>
+                    <ListBoxItem Content="官方题单"/>
+                    <ListBoxItem Content="我的成就"/>
+                    <ListBoxItem Content="在线比赛"/>
+                </ListBox>
+            </StackPanel>
+        </Border>
+
+        <!-- 右侧内容区 -->
+        <Grid Grid.Column="1" x:Name="ContentArea" Background="#F0F0F0">
+            <!-- 游戏面板 -->
+            <Grid x:Name="GamePanel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="数独游戏" 
+                         FontSize="24" 
+                         FontWeight="Bold"
+                         HorizontalAlignment="Center"
+                         Margin="0,20,0,20"/>
+
+                <!-- 数独网格 -->
+                <Border Grid.Row="1" 
+                        Width="540" 
+                        Height="540"
+                        Background="White"
+                        BorderBrush="Gray"
+                        BorderThickness="1"
+                        HorizontalAlignment="Center"
+                        BoxShadow="0 2 10 0 #15000000">
+                    <Grid x:Name="SudokuGrid">
+                        <!-- 网格将在代码中动态生成 -->
+                    </Grid>
+                </Border>
+
+                <!-- 计时器 -->
+                <Border Grid.Row="2" 
+                       Width="300"
+                       Background="White"
+                       CornerRadius="6"
+                       BoxShadow="0 2 10 0 #15000000"
+                       Margin="0,20">
+                    <StackPanel HorizontalAlignment="Center"
+                              Margin="20,10">
+                        <TextBlock Text="用时" 
+                                 HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="TimerDisplay"
+                                 Text="00:00:000"
+                                 FontSize="24"
+                                 FontWeight="Bold"
+                                 Foreground="#409EFF"
+                                 Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 控制按钮 -->
+                <StackPanel x:Name="ButtonPanel"
+                          Grid.Row="3" 
+                          Orientation="Horizontal"
+                          HorizontalAlignment="Center"
+                          Margin="0,0,0,20"
+                          Spacing="20">
+                    <Button Content="新游戏" 
+                            Width="150"
+                            Height="40"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Background="#409EFF"
+                            Foreground="White">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#3A8EE6"/>
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+                    <Button Content="检查" 
+                            Width="150"
+                            Height="40"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Background="#409EFF"
+                            Foreground="White">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#3A8EE6"/>
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+                    <Button x:Name="StartButton"
+                            Content="开始填写" 
+                            Width="150"
+                            Height="40"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Background="#409EFF"
+                            Foreground="White">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover">
+                                <Setter Property="Background" Value="#3A8EE6"/>
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window> 
