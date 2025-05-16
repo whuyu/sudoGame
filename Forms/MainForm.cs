@@ -404,40 +404,119 @@ namespace SudokuGame.Forms
 
         private void CheckSolution()
         {
-            bool isCorrect = true;
+            int[,] currentGrid = new int[9, 9];
+            bool isComplete = true;
+
+            // 收集当前输入到网格中
             for (int i = 0; i < 9; i++)
             {
                 for (int j = 0; j < 9; j++)
                 {
                     if (string.IsNullOrEmpty(cells[i, j].Text))
                     {
-                        isCorrect = false;
+                        isComplete = false;
                         break;
                     }
-                    if (int.Parse(cells[i, j].Text) != solution[i, j])
+                    currentGrid[i, j] = int.Parse(cells[i, j].Text);
+                }
+                if (!isComplete) break;
+            }
+
+            if (!isComplete)
+            {
+                MessageBox.Show("还没有完成填写！", "提示", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // 验证答案是否符合数独规则
+            bool isValid = true;
+            
+            // 检查行
+            for (int row = 0; row < 9 && isValid; row++)
+            {
+                bool[] used = new bool[10];
+                for (int col = 0; col < 9; col++)
+                {
+                    int num = currentGrid[row, col];
+                    if (num < 1 || num > 9 || used[num])
                     {
-                        isCorrect = false;
+                        isValid = false;
+                        break;
+                    }
+                    used[num] = true;
+                }
+            }
+
+            // 检查列
+            for (int col = 0; col < 9 && isValid; col++)
+            {
+                bool[] used = new bool[10];
+                for (int row = 0; row < 9; row++)
+                {
+                    int num = currentGrid[row, col];
+                    if (used[num])
+                    {
+                        isValid = false;
+                        break;
+                    }
+                    used[num] = true;
+                }
+            }
+
+            // 检查3x3方块
+            for (int block = 0; block < 9 && isValid; block++)
+            {
+                bool[] used = new bool[10];
+                int rowStart = (block / 3) * 3;
+                int colStart = (block % 3) * 3;
+                
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        int num = currentGrid[rowStart + i, colStart + j];
+                        if (used[num])
+                        {
+                            isValid = false;
+                            break;
+                        }
+                        used[num] = true;
+                    }
+                }
+            }
+
+            // 检查是否保持了原始数字不变
+            bool maintainsOriginal = true;
+            for (int i = 0; i < 9 && maintainsOriginal; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    if (puzzle[i, j] != 0 && puzzle[i, j] != currentGrid[i, j])
+                    {
+                        maintainsOriginal = false;
                         break;
                     }
                 }
-                if (!isCorrect) break;
             }
 
-            if (isCorrect)
+            if (!maintainsOriginal)
+            {
+                MessageBox.Show("你修改了题目中的原始数字！", "错误", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (isValid)
             {
                 gameStopwatch.Stop();
                 displayTimer.Stop();
-                TimeSpan finalTime = gameStopwatch.Elapsed;
-                MessageBox.Show(
-                    $"恭喜！你已经完成了数独！\n用时: {finalTime.Minutes:D2}:{finalTime.Seconds:D2}:{finalTime.Milliseconds:D3}", 
-                    "成功", 
-                    MessageBoxButtons.OK, 
-                    MessageBoxIcon.Information
-                );
+                MessageBox.Show($"恭喜！你已经完成了数独！\n用时: {timerLabel.Text}", "成功", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
-                MessageBox.Show("还没有完成或有错误，请继续努力！", "提示", 
+                MessageBox.Show("答案不正确，请继续努力！", "提示", 
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
