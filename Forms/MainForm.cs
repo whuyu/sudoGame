@@ -29,13 +29,28 @@ namespace SudokuGame.Forms
         private const int CELL_SIZE = 60;  // 统一单元格大小
         private const int GRID_SIZE = 540; // 9 * CELL_SIZE
         private const int CELL_PADDING = 3;
+        private Panel leftNavPanel;
+        private Panel contentPanel;
+        private Panel gameContentPanel;
+        private Button[] navButtons;
+        private Color selectedButtonColor = Color.FromArgb(240, 240, 240);
+        private Color normalButtonColor = Color.White;
+        private const int NAV_WIDTH = 200;
+        private static readonly string[] NAV_ITEMS = new string[] 
+        {
+            "排行榜",
+            "随机一题",
+            "我的题库",
+            "官方题单",
+            "我的成就",
+            "在线比赛"
+        };
 
         public MainForm()
         {
             InitializeComponent();
             SetupUI();
             SetupTimer();
-            GenerateNewGame();
         }
 
         private void InitializeComponent()
@@ -49,28 +64,134 @@ namespace SudokuGame.Forms
 
         private void SetupUI()
         {
-            // 添加标题
+            // 创建左侧导航栏
+            SetupNavPanel();
+
+            // 创建右侧内容区
+            contentPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(240, 240, 240)
+            };
+            this.Controls.Add(contentPanel);
+
+            // 创建游戏内容面板（初始隐藏）
+            SetupGamePanel();
+        }
+
+        private void SetupNavPanel()
+        {
+            leftNavPanel = new Panel
+            {
+                Size = new Size(NAV_WIDTH, this.ClientSize.Height),
+                Dock = DockStyle.Left,
+                BackColor = Color.White
+            };
+            this.Controls.Add(leftNavPanel);
+
+            // 添加Logo或标题
+            var logoLabel = new Label
+            {
+                Text = "数独游戏",
+                Font = new Font("微软雅黑", 18F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(51, 51, 51),
+                Size = new Size(NAV_WIDTH, 60),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            leftNavPanel.Controls.Add(logoLabel);
+
+            // 创建导航按钮
+            navButtons = new Button[NAV_ITEMS.Length];
+            for (int i = 0; i < NAV_ITEMS.Length; i++)
+            {
+                navButtons[i] = CreateNavButton(NAV_ITEMS[i], i);
+                leftNavPanel.Controls.Add(navButtons[i]);
+            }
+        }
+
+        private Button CreateNavButton(string text, int index)
+        {
+            var button = new Button
+            {
+                Text = text,
+                Size = new Size(NAV_WIDTH, 50),
+                Location = new Point(0, 80 + index * 60),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("微软雅黑", 12F),
+                BackColor = normalButtonColor,
+                ForeColor = Color.FromArgb(51, 51, 51),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(20, 0, 0, 0),
+                Cursor = Cursors.Hand
+            };
+            button.FlatAppearance.BorderSize = 0;
+            button.Click += NavButton_Click;
+
+            // 为随机一题按钮设置特殊样式
+            if (text == "随机一题")
+            {
+                button.ForeColor = Color.FromArgb(64, 158, 255);
+                button.Font = new Font("微软雅黑", 12F, FontStyle.Bold);
+            }
+
+            return button;
+        }
+
+        private void NavButton_Click(object sender, EventArgs e)
+        {
+            var clickedButton = (Button)sender;
+            
+            // 更新按钮样式
+            foreach (var btn in navButtons)
+            {
+                btn.BackColor = normalButtonColor;
+            }
+            clickedButton.BackColor = selectedButtonColor;
+
+            // 处理导航逻辑
+            switch (clickedButton.Text)
+            {
+                case "随机一题":
+                    ShowGamePanel();
+                    GenerateNewGame();
+                    break;
+                default:
+                    HideGamePanel();
+                    break;
+            }
+        }
+
+        private void SetupGamePanel()
+        {
+            gameContentPanel = new Panel
+            {
+                Size = new Size(contentPanel.Width, contentPanel.Height),
+                Visible = false,
+                BackColor = Color.FromArgb(240, 240, 240)
+            };
+            contentPanel.Controls.Add(gameContentPanel);
+
+            // 移动原有的游戏相关控件到gameContentPanel
             titleLabel = new Label
             {
                 Text = "数独游戏",
                 Font = new Font("微软雅黑", 24F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(51, 51, 51),
-                TextAlign = ContentAlignment.MiddleCenter,
                 Size = new Size(400, 60),
-                Location = new Point((this.ClientSize.Width - 400) / 2, 20)
+                TextAlign = ContentAlignment.MiddleCenter
             };
-            this.Controls.Add(titleLabel);
+            gameContentPanel.Controls.Add(titleLabel);
 
             // 创建游戏面板
             gamePanel = new Panel
             {
                 Size = new Size(GRID_SIZE, GRID_SIZE),
-                Location = new Point((this.ClientSize.Width - GRID_SIZE) / 2, 90),
+                Location = new Point((gameContentPanel.Width - GRID_SIZE) / 2, 90),
                 BackColor = Color.White,
                 BorderStyle = BorderStyle.None
             };
             gamePanel.Paint += (s, e) => DrawGridLines(e.Graphics);
-            this.Controls.Add(gamePanel);
+            gameContentPanel.Controls.Add(gamePanel);
 
             // 创建9x9的数独格子
             for (int i = 0; i < 9; i++)
@@ -96,10 +217,10 @@ namespace SudokuGame.Forms
             controlPanel = new Panel
             {
                 Size = new Size(600, 80),
-                Location = new Point((this.ClientSize.Width - 600) / 2, gamePanel.Bottom + 140), // 调整位置到计时器下方
+                Location = new Point((gameContentPanel.Width - 600) / 2, gamePanel.Bottom + 140), // 调整位置到计时器下方
                 BackColor = Color.Transparent
             };
-            this.Controls.Add(controlPanel);
+            gameContentPanel.Controls.Add(controlPanel);
 
             // 创建新游戏按钮
             newGameButton = CreateStyledButton("新游戏", 0);
@@ -167,12 +288,12 @@ namespace SudokuGame.Forms
             timerPanel = new Panel
             {
                 Size = new Size(300, 100),
-                Location = new Point((this.ClientSize.Width - 300) / 2, gamePanel.Bottom + 20), // 相对于游戏面板定位
+                Location = new Point((gameContentPanel.Width - 300) / 2, gamePanel.Bottom + 20), // 相对于游戏面板定位
                 BackColor = Color.White,
                 BorderStyle = BorderStyle.None
             };
             timerPanel.Paint += TimerPanel_Paint;
-            this.Controls.Add(timerPanel);
+            gameContentPanel.Controls.Add(timerPanel);
 
             // 添加计时器标题
             timerTitleLabel = new Label
@@ -519,6 +640,23 @@ namespace SudokuGame.Forms
                 MessageBox.Show("答案不正确，请继续努力！", "提示", 
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
+        }
+
+        private void ShowGamePanel()
+        {
+            gameContentPanel.Visible = true;
+            gameContentPanel.BringToFront();
+
+            // 重新计算和更新控件位置
+            titleLabel.Location = new Point((gameContentPanel.Width - titleLabel.Width) / 2, 20);
+            gamePanel.Location = new Point((gameContentPanel.Width - GRID_SIZE) / 2, 90);
+            timerPanel.Location = new Point((gameContentPanel.Width - 300) / 2, gamePanel.Bottom + 20);
+            controlPanel.Location = new Point((gameContentPanel.Width - 600) / 2, gamePanel.Bottom + 140);
+        }
+
+        private void HideGamePanel()
+        {
+            gameContentPanel.Visible = false;
         }
     }
 }
