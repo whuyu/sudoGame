@@ -16,7 +16,9 @@ namespace SudokuGame
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                desktop.MainWindow = new StartWindow();
+                var startWindow = new StartWindow();
+                desktop.MainWindow = startWindow;
+                startWindow.Show();
             }
 
             base.OnFrameworkInitializationCompleted();

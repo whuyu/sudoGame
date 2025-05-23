@@ -22,7 +22,64 @@
                      Foreground="#333333"
                      HorizontalAlignment="Center"/>
 
-            <!-- 开始按钮 -->
+            <!-- 登录表单 -->
+            <StackPanel Name="LoginPanel" Spacing="15" Width="300">
+                <TextBox Name="UsernameTextBox"
+                         Watermark="用户名"
+                         FontSize="16"
+                         Padding="10"/>
+                <TextBox Name="PasswordTextBox"
+                         Watermark="密码"
+                         FontSize="16"
+                         Padding="10"
+                         PasswordChar="●"/>
+                <Button Name="LoginButton"
+                        Content="登录"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        Padding="30,15"
+                        HorizontalAlignment="Center"
+                        Background="#409EFF"
+                        Foreground="White"/>
+                <Button Name="ShowRegisterButton"
+                        Content="没有账号？点击注册"
+                        FontSize="14"
+                        Background="Transparent"
+                        Foreground="#409EFF"/>
+            </StackPanel>
+
+            <!-- 注册表单 -->
+            <StackPanel Name="RegisterPanel" Spacing="15" Width="300" IsVisible="False">
+                <TextBox Name="RegisterUsernameTextBox"
+                         Watermark="用户名"
+                         FontSize="16"
+                         Padding="10"/>
+                <TextBox Name="RegisterPasswordTextBox"
+                         Watermark="密码"
+                         FontSize="16"
+                         Padding="10"
+                         PasswordChar="●"/>
+                <TextBox Name="ConfirmPasswordTextBox"
+                         Watermark="确认密码"
+                         FontSize="16"
+                         Padding="10"
+                         PasswordChar="●"/>
+                <Button Name="RegisterButton"
+                        Content="注册"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        Padding="30,15"
+                        HorizontalAlignment="Center"
+                        Background="#409EFF"
+                        Foreground="White"/>
+                <Button Name="ShowLoginButton"
+                        Content="已有账号？点击登录"
+                        FontSize="14"
+                        Background="Transparent"
+                        Foreground="#409EFF"/>
+            </StackPanel>
+
+            <!-- 开始游戏按钮（初始隐藏） -->
             <Button Name="StartButton"
                     Content="开始游戏"
                     FontSize="18"
@@ -30,7 +87,8 @@
                     Padding="30,15"
                     HorizontalAlignment="Center"
                     Background="#409EFF"
-                    Foreground="White">
+                    Foreground="White"
+                    IsVisible="False">
                 <Button.Styles>
                     <Style Selector="Button:pointerover">
                         <Setter Property="Background" Value="#3A8EE6"/>
