@@ -52,8 +52,24 @@ namespace SudokuGame.Views
                         VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
                         FontSize = 24,
                         FontWeight = FontWeight.Bold,
-                        Margin = new Thickness(1),
-                        Background = Brushes.White
+                        Background = Brushes.White,
+                        BorderThickness = new Thickness(
+                            j % 3 == 0 ? 2 : 0.5,  // 左边框
+                            i % 3 == 0 ? 2 : 0.5,  // 上边框
+                            j == 8 ? 2 : 0.5,      // 右边框
+                            i == 8 ? 2 : 0.5       // 下边框
+                        ),
+                        BorderBrush = Brushes.Black,
+                        Margin = new Thickness(0)
+                    };
+
+                    // 设置输入验证
+                    cell.TextInput += (s, e) =>
+                    {
+                        if (!char.IsDigit(e.Text[0]) || e.Text[0] == '0')
+                        {
+                            e.Handled = true;
+                        }
                     };
 
                     cells[i, j] = cell;
@@ -269,7 +285,7 @@ namespace SudokuGame.Views
                     cells[i, j].Text = puzzle[i, j] == 0 ? "" : puzzle[i, j].ToString();
                     cells[i, j].IsReadOnly = puzzle[i, j] != 0;
                     cells[i, j].Background = cells[i, j].IsReadOnly ? 
-                        new SolidColorBrush(Color.FromRgb(245, 245, 245)) : 
+                        new SolidColorBrush(Color.FromRgb(240, 240, 240)) : 
                         Brushes.White;
                     cells[i, j].Foreground = cells[i, j].IsReadOnly ? 
                         new SolidColorBrush(Color.FromRgb(51, 51, 51)) : 
