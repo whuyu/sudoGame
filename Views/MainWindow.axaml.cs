@@ -6,6 +6,9 @@ using Avalonia.Threading;
 using Avalonia.Interactivity;
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SudokuGame.Views
 {
@@ -21,89 +24,168 @@ namespace SudokuGame.Views
 
         public MainWindow()
         {
-            InitializeComponent();
-            SetupGame();
-            SetupEventHandlers();
-        }
-
-        private void SetupGame()
-        {
-            // 设置数独网格
-            var sudokuGrid = this.FindControl<Grid>("SudokuGrid");
-            
-            // 创建9x9的网格定义
-            for (int i = 0; i < 9; i++)
+            try
             {
-                sudokuGrid.RowDefinitions.Add(new RowDefinition(1, GridUnitType.Star));
-                sudokuGrid.ColumnDefinitions.Add(new ColumnDefinition(1, GridUnitType.Star));
-            }
-
-            // 创建单元格
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
+                InitializeComponent();
+                Dispatcher.UIThread.InvokeAsync(() =>
                 {
-                    var cell = new TextBox
+                    try
                     {
-                        MaxLength = 1,
-                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
-                        HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                        VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                        FontSize = 24,
-                        FontWeight = FontWeight.Bold,
-                        Background = Brushes.White,
-                        BorderThickness = new Thickness(
-                            j % 3 == 0 ? 2 : 0.5,  // 左边框
-                            i % 3 == 0 ? 2 : 0.5,  // 上边框
-                            j == 8 ? 2 : 0.5,      // 右边框
-                            i == 8 ? 2 : 0.5       // 下边框
-                        ),
-                        BorderBrush = Brushes.Black,
-                        Margin = new Thickness(0)
-                    };
-
-                    // 设置输入验证
-                    cell.TextInput += (s, e) =>
+                        SetupGame();
+                        SetupEventHandlers();
+                    }
+                    catch (Exception ex)
                     {
-                        if (!char.IsDigit(e.Text[0]) || e.Text[0] == '0')
-                        {
-                            e.Handled = true;
-                        }
-                    };
-
-                    cells[i, j] = cell;
-                    Grid.SetRow(cell, i);
-                    Grid.SetColumn(cell, j);
-                    sudokuGrid.Children.Add(cell);
-                }
+                        Debug.WriteLine($"初始化错误: {ex.Message}");
+                    }
+                });
             }
-
-            // 设置计时器
-            gameStopwatch = new Stopwatch();
-            displayTimer = new DispatcherTimer
+            catch (Exception ex)
             {
-                Interval = TimeSpan.FromMilliseconds(10)
-            };
-            displayTimer.Tick += DisplayTimer_Tick;
+                Debug.WriteLine($"构造函数错误: {ex.Message}");
+            }
         }
 
         private void SetupEventHandlers()
         {
-            // 设置导航列表事件处理
-            var navList = this.FindControl<ListBox>("NavList");
-            navList.SelectionChanged += NavList_SelectionChanged;
-
-            // 设置按钮事件处理
-            var buttonPanel = this.FindControl<StackPanel>("ButtonPanel");
-            if (buttonPanel != null)
+            try
             {
-                var buttons = buttonPanel.Children;
-                if (buttons.Count >= 3)
+                var navList = this.FindControl<ListBox>("NavList");
+                if (navList != null)
                 {
-                    ((Button)buttons[0]).Click += (s, e) => GenerateNewGame();
-                    ((Button)buttons[1]).Click += (s, e) => CheckSolution();
-                    ((Button)buttons[2]).Click += StartTimerButton_Click;
+                    navList.SelectionChanged += NavList_SelectionChanged;
+                }
+
+                var buttonPanel = this.FindControl<StackPanel>("ButtonPanel");
+                if (buttonPanel != null)
+                {
+                    var buttons = buttonPanel.Children;
+                    if (buttons.Count >= 3)
+                    {
+                        ((Button)buttons[0]).Click += (s, e) => GenerateNewGame();
+                        ((Button)buttons[1]).Click += (s, e) => CheckSolution();
+                        ((Button)buttons[2]).Click += StartTimerButton_Click;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"设置事件处理器错误: {ex.Message}");
+            }
+        }
+
+        private void SetupGame()
+        {
+            try
+            {
+                var sudokuGrid = this.FindControl<Grid>("SudokuGrid");
+                if (sudokuGrid == null)
+                {
+                    Debug.WriteLine("找不到SudokuGrid");
+                    return;
+                }
+
+                sudokuGrid.RowDefinitions.Clear();
+                sudokuGrid.ColumnDefinitions.Clear();
+                sudokuGrid.Children.Clear();
+
+                for (int i = 0; i < 9; i++)
+                {
+                    sudokuGrid.RowDefinitions.Add(new RowDefinition(1, GridUnitType.Star));
+                    sudokuGrid.ColumnDefinitions.Add(new ColumnDefinition(1, GridUnitType.Star));
+                }
+
+                for (int i = 0; i < 9; i++)
+                {
+                    for (int j = 0; j < 9; j++)
+                    {
+                        var cell = new TextBox
+                        {
+                            MaxLength = 1,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+                            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                            VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                            FontSize = 24,
+                            FontWeight = FontWeight.Bold,
+                            BorderThickness = new Thickness(
+                                j % 3 == 0 ? 2 : 0.5,
+                                i % 3 == 0 ? 2 : 0.5,
+                                j == 8 ? 2 : 0.5,
+                                i == 8 ? 2 : 0.5
+                            ),
+                            BorderBrush = Brushes.Black,
+                            Margin = new Thickness(0)
+                        };
+
+                        // 设置输入验证
+                        cell.TextInput += (s, e) =>
+                        {
+                            if (!char.IsDigit(e.Text[0]) || e.Text[0] == '0')
+                            {
+                                e.Handled = true;
+                            }
+                        };
+
+                        // 添加文本变更事件处理，确保可编辑单元格颜色一致性
+                        cell.TextChanged += (s, e) =>
+                        {
+                            if (!cell.IsReadOnly)
+                            {
+                                cell.Foreground = new SolidColorBrush(Color.FromRgb(64, 158, 255)); // 蓝色 #409EFF
+                            }
+                        };
+
+                        cells[i, j] = cell;
+                        Grid.SetRow(cell, i);
+                        Grid.SetColumn(cell, j);
+                        sudokuGrid.Children.Add(cell);
+                    }
+                }
+
+                gameStopwatch = new Stopwatch();
+                displayTimer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(10)
+                };
+                displayTimer.Tick += DisplayTimer_Tick;
+
+                // GenerateNewGame() 将在构造函数异步块的 SetupGame() 后调用
+                // DisplayPuzzle() 将在 GenerateNewGame() 中调用，负责设置初始状态和颜色
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"设置游戏错误: {ex.Message}");
+            }
+        }
+
+        private void DisplayPuzzle()
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    // 根据谜题数据设置文本、只读状态和颜色
+                    cells[i, j].Text = puzzle[i, j] == 0 ? "" : puzzle[i, j].ToString();
+                    cells[i, j].IsReadOnly = puzzle[i, j] != 0;
+                    
+                    // 统一设置单元格颜色
+                    if (cells[i, j].IsReadOnly)
+                    {
+                        // 初始数字（只读单元格）使用浅灰色背景和深灰色文字
+                        cells[i, j].Background = new SolidColorBrush(Color.FromRgb(240, 240, 240)); // #F0F0F0
+                        cells[i, j].Foreground = new SolidColorBrush(Color.FromRgb(51, 51, 51)); // #333333
+                    }
+                    else
+                    {
+                        // 可编辑单元格使用纯白色背景和蓝色文字
+                        cells[i, j].Background = Brushes.White;
+                        // 可编辑单元格的文字颜色在 TextChanged 事件中设置，确保一致性
+                        // cells[i, j].Foreground = new SolidColorBrush(Color.FromRgb(64, 158, 255)); // #409EFF
+                    }
+
+                    // 统一设置边框
+                    cells[i, j].BorderBrush = Brushes.Black;
                 }
             }
         }
@@ -274,24 +356,6 @@ namespace SudokuGame.Views
                         return false;
 
             return true;
-        }
-
-        private void DisplayPuzzle()
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    cells[i, j].Text = puzzle[i, j] == 0 ? "" : puzzle[i, j].ToString();
-                    cells[i, j].IsReadOnly = puzzle[i, j] != 0;
-                    cells[i, j].Background = cells[i, j].IsReadOnly ? 
-                        new SolidColorBrush(Color.FromRgb(240, 240, 240)) : 
-                        Brushes.White;
-                    cells[i, j].Foreground = cells[i, j].IsReadOnly ? 
-                        new SolidColorBrush(Color.FromRgb(51, 51, 51)) : 
-                        new SolidColorBrush(Color.FromRgb(64, 158, 255));
-                }
-            }
         }
 
         private void CheckSolution()

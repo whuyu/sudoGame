@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:SudokuGame.Views.Controls"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="SudokuGame.Views.MainWindow"
         Title="数独游戏"
@@ -53,18 +54,35 @@
                          Margin="0,20,0,20"/>
 
                 <!-- 数独网格 -->
-                <Border Grid.Row="1" 
-                        Width="540" 
-                        Height="540"
-                        Background="White"
-                        BorderBrush="Gray"
-                        BorderThickness="1"
-                        HorizontalAlignment="Center"
-                        BoxShadow="0 2 10 0 #15000000">
-                    <Grid x:Name="SudokuGrid">
-                        <!-- 网格将在代码中动态生成 -->
-                    </Grid>
-                </Border>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 数独棋盘 -->
+                    <Border Grid.Column="1"
+                            Width="540" 
+                            Height="540"
+                            Background="White"
+                            BorderBrush="Black"
+                            BorderThickness="2"
+                            BoxShadow="0 2 10 0 #15000000">
+                        <Grid x:Name="SudokuGrid">
+                            <!-- 网格将在代码中动态生成 -->
+                        </Grid>
+                    </Border>
+
+                    <!-- 右侧按钮 -->
+                    <StackPanel Grid.Column="2" 
+                                Margin="20,0,0,0"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Left"
+                                Spacing="10">
+                        <!-- 移除 StepCheckButton -->
+                    </StackPanel>
+                </Grid>
 
                 <!-- 计时器 -->
                 <Border Grid.Row="2" 
