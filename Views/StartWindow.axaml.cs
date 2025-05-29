@@ -75,7 +75,7 @@ namespace SudokuGame.Views
                     Dispatcher.UIThread.Post(() => 
                     {
                         _isDatabaseReady = true;
-                        ShowSuccess("数据库已连接");
+                        //ShowSuccess("数据库已连接");
                     });
                 }
                 catch (Exception ex)
