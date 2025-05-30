@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SudokuGame.Views.GameView">
+    <Grid RowDefinitions="Auto,*">
+        <!-- 顶部按钮面板 -->
+        <StackPanel Name="ButtonPanel" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Center" 
+                    Margin="0,20,0,20" 
+                    Spacing="20">
+            <Button Content="重新开始" 
+                    Width="100" 
+                    Height="35"
+                    Name="RestartButton"/>
+            <Button Content="检查" 
+                    Width="100" 
+                    Height="35"
+                    Name="CheckButton"/>
+            <Button Content="开始填写" 
+                    Width="100" 
+                    Height="35"
+                    Name="StartButton"/>
+            <TextBlock Name="TimerDisplay" 
+                      VerticalAlignment="Center" 
+                      FontSize="20" 
+                      Text="00:00:000"/>
+        </StackPanel>
+
+        <!-- 数独游戏网格 -->
+        <Grid Name="SudokuGrid" 
+              Grid.Row="1" 
+              Margin="50"
+              HorizontalAlignment="Center" 
+              VerticalAlignment="Center" 
+              Width="500" 
+              Height="500">
+            <!-- 网格的行和列定义将在代码中动态添加 -->
+        </Grid>
+    </Grid>
+</UserControl> 

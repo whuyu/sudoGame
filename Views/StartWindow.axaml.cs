@@ -25,6 +25,7 @@ namespace SudokuGame.Views
         private TextBox registerPasswordTextBox = null!;
         private TextBox confirmPasswordTextBox = null!;
         private bool _isDatabaseReady = false;
+        private int _currentUserId = 0;
 
         public StartWindow()
         {
@@ -75,7 +76,6 @@ namespace SudokuGame.Views
                     Dispatcher.UIThread.Post(() => 
                     {
                         _isDatabaseReady = true;
-                        //ShowSuccess("数据库已连接");
                     });
                 }
                 catch (Exception ex)
@@ -143,10 +143,10 @@ namespace SudokuGame.Views
                 return;
             }
 
-            var (success, message) = databaseService.ValidateUser(username, password);
+            var (success, message, userId) = databaseService.ValidateUser(username, password);
             if (success)
             {
-                ShowSuccess(message);
+                _currentUserId = userId;
                 loginPanel.IsVisible = false;
                 startButton.IsVisible = true;
             }
@@ -180,10 +180,10 @@ namespace SudokuGame.Views
                 return;
             }
 
-            var (success, message) = databaseService.RegisterUser(username, password);
+            var (success, message, userId) = databaseService.RegisterUser(username, password);
             if (success)
             {
-                ShowSuccess(message);
+                _currentUserId = userId;
                 ShowLoginButton_Click(sender, e);
             }
             else
@@ -206,7 +206,7 @@ namespace SudokuGame.Views
 
         private void StartButton_Click(object? sender, RoutedEventArgs e)
         {
-            var mainWindow = new MainWindow();
+            var mainWindow = new MainWindow(_currentUserId);
             mainWindow.Show();
             this.Close();
         }

@@ -9,6 +9,8 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using SudokuGame.Models;
+using SudokuGame.Services;
 
 namespace SudokuGame.Views
 {
@@ -19,30 +21,57 @@ namespace SudokuGame.Views
         private int[,] puzzle = new int[9, 9];
         private Random random = new Random();
         private bool isGameStarted = false;
-        private Stopwatch gameStopwatch;
-        private DispatcherTimer displayTimer;
+        private Stopwatch gameStopwatch = new();
+        private DispatcherTimer displayTimer = new();
+        private Grid gamePanel;
+        private Grid contentArea;
+        private MyPuzzlesView myPuzzlesView;
+        private readonly int _userId;
+        private MyPuzzlesView? _myPuzzlesView;
+        private GameView? _gameView;
+        private bool _isFavorited = false;
+        private Button? favoriteButton;
+        private SudokuPuzzle? currentPuzzle;
+        private readonly DatabaseService _databaseService;
+        private bool _isLoadingExistingPuzzle = false;
 
         public MainWindow()
         {
-            try
+            InitializeComponent();
+        }
+
+        public MainWindow(int userId)
+        {
+            InitializeComponent();
+            _userId = userId;
+            _databaseService = new DatabaseService();
+
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
-                InitializeComponent();
-                Dispatcher.UIThread.InvokeAsync(() =>
+                try
                 {
-                    try
-                    {
-                        SetupGame();
-                        SetupEventHandlers();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"初始化错误: {ex.Message}");
-                    }
-                });
-            }
-            catch (Exception ex)
+                    InitializeControls();
+                    SetupGame();
+                    SetupEventHandlers();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"初始化错误: {ex.Message}");
+                }
+            });
+        }
+
+        private void InitializeControls()
+        {
+            gamePanel = this.FindControl<Grid>("GamePanel") ?? throw new InvalidOperationException("GamePanel not found");
+            contentArea = this.FindControl<Grid>("ContentArea") ?? throw new InvalidOperationException("ContentArea not found");
+            myPuzzlesView = new MyPuzzlesView(_userId);
+            myPuzzlesView.OnPuzzleSelected += MyPuzzlesView_OnPuzzleSelected;
+            favoriteButton = this.FindControl<Button>("FavoriteButton");
+            
+            if (favoriteButton != null)
             {
-                Debug.WriteLine($"构造函数错误: {ex.Message}");
+                favoriteButton.Click += FavoriteButton_Click;
             }
         }
 
@@ -143,11 +172,8 @@ namespace SudokuGame.Views
                     }
                 }
 
-                gameStopwatch = new Stopwatch();
-                displayTimer = new DispatcherTimer
-                {
-                    Interval = TimeSpan.FromMilliseconds(10)
-                };
+                gameStopwatch.Start();
+                displayTimer.Interval = TimeSpan.FromMilliseconds(10);
                 displayTimer.Tick += DisplayTimer_Tick;
 
                 // GenerateNewGame() 将在构造函数异步块的 SetupGame() 后调用
@@ -168,6 +194,7 @@ namespace SudokuGame.Views
                     // 根据谜题数据设置文本、只读状态和颜色
                     cells[i, j].Text = puzzle[i, j] == 0 ? "" : puzzle[i, j].ToString();
                     cells[i, j].IsReadOnly = puzzle[i, j] != 0;
+                    cells[i, j].IsEnabled = false; // 初始状态下禁用所有单元格
                     
                     // 统一设置单元格颜色
                     if (cells[i, j].IsReadOnly)
@@ -180,8 +207,7 @@ namespace SudokuGame.Views
                     {
                         // 可编辑单元格使用纯白色背景和蓝色文字
                         cells[i, j].Background = Brushes.White;
-                        // 可编辑单元格的文字颜色在 TextChanged 事件中设置，确保一致性
-                        // cells[i, j].Foreground = new SolidColorBrush(Color.FromRgb(64, 158, 255)); // #409EFF
+                        cells[i, j].Foreground = new SolidColorBrush(Color.FromRgb(64, 158, 255)); // #409EFF
                     }
 
                     // 统一设置边框
@@ -194,23 +220,31 @@ namespace SudokuGame.Views
         {
             var listBox = (ListBox)sender;
             var selectedItem = (ListBoxItem)listBox.SelectedItem;
+            var selectedContent = selectedItem?.Content.ToString();
 
-            if (selectedItem?.Content.ToString() == "随机一题")
+            // 隐藏所有内容
+            gamePanel.IsVisible = false;
+            if (myPuzzlesView.Parent == contentArea)
             {
-                var gamePanel = this.FindControl<Grid>("GamePanel");
-                if (gamePanel != null)
-                {
-                    gamePanel.IsVisible = true;
-                    GenerateNewGame();
-                }
+                contentArea.Children.Remove(myPuzzlesView);
             }
-            else
+
+            // 显示选中的内容
+            switch (selectedContent)
             {
-                var gamePanel = this.FindControl<Grid>("GamePanel");
-                if (gamePanel != null)
-                {
-                    gamePanel.IsVisible = false;
-                }
+                case "随机一题":
+                    gamePanel.IsVisible = true;
+                    if (!_isLoadingExistingPuzzle)
+                    {
+                        GenerateNewGame();
+                    }
+                    _isLoadingExistingPuzzle = false;
+                    break;
+                case "我的题库":
+                    Grid.SetRow(myPuzzlesView, 0);
+                    Grid.SetRowSpan(myPuzzlesView, 4);
+                    contentArea.Children.Add(myPuzzlesView);
+                    break;
             }
         }
 
@@ -281,6 +315,102 @@ namespace SudokuGame.Views
             GenerateSudoku();
             DisplayPuzzle();
             EnableAllCells(false);
+
+            // 重置收藏状态
+            _isFavorited = false;
+            if (favoriteButton != null)
+            {
+                favoriteButton.Classes.Remove("active");
+            }
+
+            // 创建新的数独题目对象
+            currentPuzzle = new SudokuPuzzle
+            {
+                UserId = _userId,
+                InitialBoard = BoardToString(puzzle),
+                CurrentBoard = BoardToString(puzzle),
+                Solution = BoardToString(solution),
+                Difficulty = "普通", // 可以根据实际难度设置
+                CreatedAt = DateTime.Now,
+                LastPlayedAt = null,
+                TotalPlayTime = TimeSpan.Zero,
+                IsCompleted = false
+            };
+        }
+
+        private string BoardToString(int[,] board)
+        {
+            var result = new char[81];
+            for (int i = 0; i < 9; i++)
+                for (int j = 0; j < 9; j++)
+                    result[i * 9 + j] = board[i, j].ToString()[0];
+            return new string(result);
+        }
+
+        private async void FavoriteButton_Click(object? sender, RoutedEventArgs e)
+        {
+            if (currentPuzzle == null) return;
+
+            try
+            {
+                if (!_isFavorited)
+                {
+                    // 保存到数据库
+                    _databaseService.SavePuzzle(currentPuzzle);
+                    _isFavorited = true;
+                    if (favoriteButton != null)
+                    {
+                        favoriteButton.Classes.Add("active");
+                    }
+
+                    // 显示成功消息
+                    var messageWindow = new Window
+                    {
+                        Title = "成功",
+                        Content = "题目已收藏",
+                        Width = 200,
+                        Height = 100,
+                        WindowStartupLocation = WindowStartupLocation.CenterOwner
+                    };
+                    await messageWindow.ShowDialog(this);
+                }
+                else
+                {
+                    // 从数据库中删除
+                    _databaseService.DeletePuzzle(currentPuzzle.Id);
+                    _isFavorited = false;
+                    if (favoriteButton != null)
+                    {
+                        favoriteButton.Classes.Remove("active");
+                    }
+
+                    // 显示成功消息
+                    var messageWindow = new Window
+                    {
+                        Title = "成功",
+                        Content = "已取消收藏",
+                        Width = 200,
+                        Height = 100,
+                        WindowStartupLocation = WindowStartupLocation.CenterOwner
+                    };
+                    await messageWindow.ShowDialog(this);
+                }
+
+                // 刷新题库视图
+                myPuzzlesView.RefreshPuzzles();
+            }
+            catch (Exception ex)
+            {
+                var messageWindow = new Window
+                {
+                    Title = "错误",
+                    Content = $"操作失败: {ex.Message}",
+                    Width = 300,
+                    Height = 150,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                await messageWindow.ShowDialog(this);
+            }
         }
 
         private void GenerateSudoku()
@@ -474,6 +604,91 @@ namespace SudokuGame.Views
             }
 
             return true;
+        }
+
+        private void InitializeViews()
+        {
+            _myPuzzlesView = new MyPuzzlesView(_userId);
+            _myPuzzlesView.OnPuzzleSelected += MyPuzzlesView_OnPuzzleSelected;
+            _gameView = new GameView(_userId);
+
+            // 初始显示题库视图
+            var contentControl = this.FindControl<ContentControl>("MainContent");
+            if (contentControl != null)
+            {
+                contentControl.Content = _myPuzzlesView;
+            }
+        }
+
+        private void MyPuzzlesView_OnPuzzleSelected(object? sender, SudokuPuzzle puzzle)
+        {
+            Debug.WriteLine("开始加载题目...");
+            _isLoadingExistingPuzzle = true;
+            
+            try
+            {
+                // 切换到游戏面板
+                gamePanel.IsVisible = true;
+                if (myPuzzlesView.Parent == contentArea)
+                {
+                    contentArea.Children.Remove(myPuzzlesView);
+                }
+
+                // 更新导航栏选中项
+                var navList = this.FindControl<ListBox>("NavList");
+                if (navList != null)
+                {
+                    navList.SelectedIndex = 1; // "随机一题"的索引
+                }
+
+                // 加载题目
+                LoadExistingPuzzle(puzzle);
+                Debug.WriteLine("题目加载完成");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"加载题目时出错: {ex.Message}");
+            }
+        }
+
+        private void LoadExistingPuzzle(SudokuPuzzle puzzle)
+        {
+            currentPuzzle = puzzle;
+            _isFavorited = true; // 设置为已收藏状态
+            if (favoriteButton != null)
+            {
+                favoriteButton.Classes.Add("active");
+            }
+
+            // 将字符串转换为数独数组
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    int index = i * 9 + j;
+                    this.puzzle[i, j] = puzzle.InitialBoard[index] - '0';
+                    this.solution[i, j] = puzzle.Solution[index] - '0';
+                }
+            }
+
+            // 显示题目
+            DisplayPuzzle();
+
+            // 重置游戏状态
+            gameStopwatch.Reset();
+            displayTimer.Stop();
+            var timerDisplay = this.FindControl<TextBlock>("TimerDisplay");
+            if (timerDisplay != null)
+            {
+                timerDisplay.Text = "00:00:000";
+            }
+            isGameStarted = false;
+            var startButton = this.FindControl<Button>("StartButton");
+            if (startButton != null)
+            {
+                startButton.Content = "开始填写";
+            }
+            EnableAllCells(false);
         }
     }
 } 

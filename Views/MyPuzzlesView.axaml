@@ -1,0 +1,107 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SudokuGame.Views.MyPuzzlesView">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题和筛选区域 -->
+        <StackPanel Grid.Row="0" Margin="20">
+            <TextBlock Text="我的题库" 
+                     FontSize="24" 
+                     FontWeight="Bold"
+                     Margin="0,0,0,20"/>
+            
+            <WrapPanel Margin="0,0,0,20">
+                <ComboBox Name="DifficultyComboBox" 
+                         Width="120" 
+                         Margin="0,0,10,0" 
+                         SelectedIndex="0">
+                    <ComboBoxItem Content="简单"/>
+                    <ComboBoxItem Content="普通"/>
+                    <ComboBoxItem Content="困难"/>
+                </ComboBox>
+                <ComboBox Width="120" 
+                         Margin="0,0,10,0" 
+                         SelectedIndex="0">
+                    <ComboBoxItem Content="全部"/>
+                    <ComboBoxItem Content="未完成"/>
+                    <ComboBoxItem Content="已完成"/>
+                </ComboBox>
+                <Button Name="CreateButton"
+                        Content="新建题目" 
+                        Background="#409EFF"
+                        Foreground="White"/>
+            </WrapPanel>
+        </StackPanel>
+
+        <!-- 题目列表 -->
+        <ScrollViewer Grid.Row="1" Margin="20,0,20,20">
+            <ItemsControl Name="PuzzlesItemsControl">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="White"
+                                Margin="0,0,0,10"
+                                Padding="20"
+                                CornerRadius="4"
+                                BoxShadow="0 2 4 0 #15000000">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 题目预览 -->
+                                <Border Grid.Column="0"
+                                        Width="100"
+                                        Height="100"
+                                        Background="#F5F7FA"
+                                        CornerRadius="4"
+                                        Margin="0,0,20,0">
+                                    <TextBlock Text="预览"
+                                             VerticalAlignment="Center"
+                                             HorizontalAlignment="Center"/>
+                                </Border>
+
+                                <!-- 题目信息 -->
+                                <StackPanel Grid.Column="1" 
+                                          VerticalAlignment="Center"
+                                          Spacing="5">
+                                    <TextBlock Text="{Binding Difficulty}" 
+                                             FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding CreatedAt, StringFormat='创建时间: {0:yyyy-MM-dd HH:mm}'}"
+                                             Foreground="#666"/>
+                                    <TextBlock Text="{Binding TotalPlayTime, StringFormat='游玩时间: {0:hh\\:mm\\:ss}'}"
+                                             Foreground="#666"/>
+                                </StackPanel>
+
+                                <!-- 操作按钮 -->
+                                <StackPanel Grid.Column="2" 
+                                          VerticalAlignment="Center"
+                                          Spacing="10">
+                                    <Button Content="继续"
+                                            Name="ContinueButton"
+                                            Click="ContinueButton_Click"
+                                            Width="80"
+                                            Background="#409EFF"
+                                            Foreground="White"
+                                            Tag="{Binding}"/>
+                                    <Button Content="删除"
+                                            Name="DeleteButton"
+                                            Click="DeleteButton_Click"
+                                            Width="80"
+                                            Background="#F56C6C"
+                                            Foreground="White"
+                                            Tag="{Binding}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl> 

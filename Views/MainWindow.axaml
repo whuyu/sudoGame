@@ -8,6 +8,21 @@
         Title="数独游戏"
         WindowStartupLocation="CenterScreen">
 
+    <Window.Styles>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="#409EFF"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button:pointerover">
+            <Setter Property="Background" Value="#3A8EE6"/>
+        </Style>
+        <Style Selector="Button.active">
+            <Setter Property="Background" Value="#67C23A"/>
+        </Style>
+    </Window.Styles>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250"/>
@@ -111,46 +126,21 @@
                           HorizontalAlignment="Center"
                           Margin="0,0,0,20"
                           Spacing="20">
-                    <Button Content="新游戏" 
-                            Width="150"
-                            Height="40"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center"
-                            Background="#409EFF"
-                            Foreground="White">
-                        <Button.Styles>
-                            <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#3A8EE6"/>
-                            </Style>
-                        </Button.Styles>
-                    </Button>
+                    <Button Content="重新开始" 
+                            Width="100" 
+                            Height="35"/>
                     <Button Content="检查" 
-                            Width="150"
-                            Height="40"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center"
-                            Background="#409EFF"
-                            Foreground="White">
-                        <Button.Styles>
-                            <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#3A8EE6"/>
-                            </Style>
-                        </Button.Styles>
-                    </Button>
-                    <Button x:Name="StartButton"
-                            Content="开始填写" 
-                            Width="150"
-                            Height="40"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center"
-                            Background="#409EFF"
-                            Foreground="White">
-                        <Button.Styles>
-                            <Style Selector="Button:pointerover">
-                                <Setter Property="Background" Value="#3A8EE6"/>
-                            </Style>
-                        </Button.Styles>
-                    </Button>
+                            Width="100" 
+                            Height="35"/>
+                    <Button Content="开始填写" 
+                            Width="100" 
+                            Height="35"
+                            Name="StartButton"/>
+                    <Button Content="收藏" 
+                            Width="100" 
+                            Height="35"
+                            Name="FavoriteButton"
+                            Classes.active="{Binding IsFavorited}"/>
                 </StackPanel>
             </Grid>
         </Grid>
