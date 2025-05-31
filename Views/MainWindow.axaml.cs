@@ -222,11 +222,14 @@ namespace SudokuGame.Views
             var selectedItem = (ListBoxItem)listBox.SelectedItem;
             var selectedContent = selectedItem?.Content.ToString();
 
-            // 隐藏所有内容
+            // 隐藏游戏面板
             gamePanel.IsVisible = false;
-            if (myPuzzlesView.Parent == contentArea)
+
+            // 清除其他视图
+            var viewsToRemove = contentArea.Children.Where(c => c != gamePanel).ToList();
+            foreach (var view in viewsToRemove)
             {
-                contentArea.Children.Remove(myPuzzlesView);
+                contentArea.Children.Remove(view);
             }
 
             // 显示选中的内容
@@ -244,6 +247,12 @@ namespace SudokuGame.Views
                     Grid.SetRow(myPuzzlesView, 0);
                     Grid.SetRowSpan(myPuzzlesView, 4);
                     contentArea.Children.Add(myPuzzlesView);
+                    break;
+                case "在线比赛":
+                    var contestListView = new ContestListView(_userId);
+                    Grid.SetRow(contestListView, 0);
+                    Grid.SetRowSpan(contestListView, 4);
+                    contentArea.Children.Add(contestListView);
                     break;
             }
         }
@@ -689,6 +698,22 @@ namespace SudokuGame.Views
                 startButton.Content = "开始填写";
             }
             EnableAllCells(false);
+        }
+
+        // 添加新方法用于设置内容
+        public void SetContent(UserControl content)
+        {
+            // 清除其他视图
+            var viewsToRemove = contentArea.Children.Where(c => c != gamePanel).ToList();
+            foreach (var view in viewsToRemove)
+            {
+                contentArea.Children.Remove(view);
+            }
+
+            // 添加新内容
+            Grid.SetRow(content, 0);
+            Grid.SetRowSpan(content, 4);
+            contentArea.Children.Add(content);
         }
     }
 } 

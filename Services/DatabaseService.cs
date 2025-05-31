@@ -14,7 +14,7 @@ namespace SudokuGame.Services
 
         public DatabaseService()
         {
-            _connectionString = "Server=localhost;Uid=root;Pwd=123456;Allow User Variables=True;";
+            _connectionString = "Server=localhost;Uid=root;Pwd=20234108@123;Allow User Variables=True;";
             _connection = new MySqlConnection(_connectionString);
             InitializeDatabase();
         }
@@ -69,6 +69,57 @@ namespace SudokuGame.Services
                     );";
 
                 using (var cmd = new MySqlCommand(createPuzzlesTableQuery, _connection))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+
+                // 创建比赛表
+                string createContestsTableQuery = @"
+                    CREATE TABLE IF NOT EXISTS contests (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        title VARCHAR(100) NOT NULL,
+                        description TEXT,
+                        start_time DATETIME NOT NULL,
+                        duration INT NOT NULL COMMENT '比赛时长（分钟）',
+                        status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending, ongoing, finished',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );";
+
+                using (var cmd = new MySqlCommand(createContestsTableQuery, _connection))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+
+                // 创建比赛题目表
+                string createContestPuzzlesTableQuery = @"
+                    CREATE TABLE IF NOT EXISTS contest_puzzles (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        contest_id INT NOT NULL,
+                        puzzle_id INT NOT NULL,
+                        order_index INT NOT NULL,
+                        FOREIGN KEY (contest_id) REFERENCES contests(id) ON DELETE CASCADE,
+                        FOREIGN KEY (puzzle_id) REFERENCES sudoku_puzzles(id) ON DELETE CASCADE
+                    );";
+
+                using (var cmd = new MySqlCommand(createContestPuzzlesTableQuery, _connection))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+
+                // 创建比赛参与记录表
+                string createContestParticipantsTableQuery = @"
+                    CREATE TABLE IF NOT EXISTS contest_participants (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        contest_id INT NOT NULL,
+                        user_id INT NOT NULL,
+                        join_time DATETIME NOT NULL,
+                        completed_puzzles INT DEFAULT 0,
+                        total_time INT DEFAULT 0 COMMENT '总用时（秒）',
+                        FOREIGN KEY (contest_id) REFERENCES contests(id) ON DELETE CASCADE,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    );";
+
+                using (var cmd = new MySqlCommand(createContestParticipantsTableQuery, _connection))
                 {
                     cmd.ExecuteNonQuery();
                 }
@@ -235,6 +286,219 @@ namespace SudokuGame.Services
             {
                 return (false, $"注册失败: {ex.Message}", 0);
             }
+        }
+
+        // 获取所有比赛列表
+        public List<Contest> GetContests()
+        {
+            var contests = new List<Contest>();
+            string query = @"
+                SELECT * FROM contests 
+                ORDER BY start_time DESC";
+
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        contests.Add(new Contest
+                        {
+                            Id = reader.GetInt32("id"),
+                            Title = reader.GetString("title"),
+                            Description = reader.GetString("description"),
+                            StartTime = reader.GetDateTime("start_time"),
+                            Duration = reader.GetInt32("duration"),
+                            Status = reader.GetString("status"),
+                            CreatedAt = reader.GetDateTime("created_at")
+                        });
+                    }
+                }
+            }
+            return contests;
+        }
+
+        // 获取比赛详情
+        public Contest GetContest(int contestId)
+        {
+            string query = "SELECT * FROM contests WHERE id = @contestId";
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddWithValue("@contestId", contestId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return new Contest
+                        {
+                            Id = reader.GetInt32("id"),
+                            Title = reader.GetString("title"),
+                            Description = reader.GetString("description"),
+                            StartTime = reader.GetDateTime("start_time"),
+                            Duration = reader.GetInt32("duration"),
+                            Status = reader.GetString("status"),
+                            CreatedAt = reader.GetDateTime("created_at")
+                        };
+                    }
+                }
+            }
+            return null;
+        }
+
+        // 获取比赛题目列表
+        public List<SudokuPuzzle> GetContestPuzzles(int contestId)
+        {
+            var puzzles = new List<SudokuPuzzle>();
+            string query = @"
+                SELECT p.* FROM sudoku_puzzles p
+                INNER JOIN contest_puzzles cp ON p.id = cp.puzzle_id
+                WHERE cp.contest_id = @contestId
+                ORDER BY cp.order_index";
+
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddWithValue("@contestId", contestId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        puzzles.Add(new SudokuPuzzle
+                        {
+                            Id = reader.GetInt32("id"),
+                            UserId = reader.GetInt32("user_id"),
+                            InitialBoard = reader.GetString("initial_board"),
+                            CurrentBoard = reader.GetString("current_board"),
+                            Solution = reader.GetString("solution"),
+                            Difficulty = reader.GetString("difficulty"),
+                            CreatedAt = reader.GetDateTime("created_at"),
+                            LastPlayedAt = reader.IsDBNull(reader.GetOrdinal("last_played_at")) 
+                                ? null 
+                                : reader.GetDateTime("last_played_at"),
+                            TotalPlayTime = TimeSpan.FromSeconds(reader.GetInt32("total_play_time")),
+                            IsCompleted = reader.GetBoolean("is_completed")
+                        });
+                    }
+                }
+            }
+            return puzzles;
+        }
+
+        // 加入比赛
+        public (bool success, string message) JoinContest(int contestId, int userId)
+        {
+            try
+            {
+                // 检查比赛状态
+                var contest = GetContest(contestId);
+                if (contest == null)
+                {
+                    return (false, "比赛不存在");
+                }
+
+                if (contest.Status == "finished")
+                {
+                    return (false, "比赛已结束");
+                }
+
+                if (DateTime.Now < contest.StartTime)
+                {
+                    return (false, "比赛还未开始");
+                }
+
+                if (DateTime.Now > contest.StartTime.AddMinutes(contest.Duration))
+                {
+                    return (false, "比赛已结束");
+                }
+
+                // 检查是否已经加入
+                string checkQuery = @"
+                    SELECT COUNT(*) FROM contest_participants 
+                    WHERE contest_id = @contestId AND user_id = @userId";
+
+                using (var cmd = new MySqlCommand(checkQuery, _connection))
+                {
+                    cmd.Parameters.AddWithValue("@contestId", contestId);
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    long count = (long)cmd.ExecuteScalar();
+                    if (count > 0)
+                    {
+                        // 如果已经加入，直接返回成功
+                        return (true, "成功加入比赛");
+                    }
+                }
+
+                // 加入比赛
+                string insertQuery = @"
+                    INSERT INTO contest_participants (contest_id, user_id, join_time)
+                    VALUES (@contestId, @userId, @joinTime)";
+
+                using (var cmd = new MySqlCommand(insertQuery, _connection))
+                {
+                    cmd.Parameters.AddWithValue("@contestId", contestId);
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    cmd.Parameters.AddWithValue("@joinTime", DateTime.Now);
+                    cmd.ExecuteNonQuery();
+                }
+
+                return (true, "成功加入比赛");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"加入比赛失败: {ex.Message}");
+            }
+        }
+
+        // 更新比赛参与者的完成情况
+        public void UpdateContestParticipant(int contestId, int userId, int completedPuzzles, int totalTime)
+        {
+            string query = @"
+                UPDATE contest_participants 
+                SET completed_puzzles = @completedPuzzles,
+                    total_time = @totalTime
+                WHERE contest_id = @contestId AND user_id = @userId";
+
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddWithValue("@contestId", contestId);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@completedPuzzles", completedPuzzles);
+                cmd.Parameters.AddWithValue("@totalTime", totalTime);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        // 获取比赛排行榜
+        public List<ContestParticipant> GetContestLeaderboard(int contestId)
+        {
+            var participants = new List<ContestParticipant>();
+            string query = @"
+                SELECT cp.*, u.username 
+                FROM contest_participants cp
+                INNER JOIN users u ON cp.user_id = u.id
+                WHERE cp.contest_id = @contestId
+                ORDER BY cp.completed_puzzles DESC, cp.total_time ASC";
+
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddWithValue("@contestId", contestId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        participants.Add(new ContestParticipant
+                        {
+                            Id = reader.GetInt32("id"),
+                            ContestId = reader.GetInt32("contest_id"),
+                            UserId = reader.GetInt32("user_id"),
+                            Username = reader.GetString("username"),
+                            JoinTime = reader.GetDateTime("join_time"),
+                            CompletedPuzzles = reader.GetInt32("completed_puzzles"),
+                            TotalTime = reader.GetInt32("total_time")
+                        });
+                    }
+                }
+            }
+            return participants;
         }
     }
 } 
