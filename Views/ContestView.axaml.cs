@@ -126,14 +126,8 @@ namespace SudokuGame.Views
             var mainWindow = this.FindAncestorOfType<MainWindow>();
             if (mainWindow != null)
             {
-                var navList = mainWindow.FindControl<ListBox>("NavList");
-                if (navList != null)
-                {
-                    // 先清除当前选中项
-                    navList.SelectedItem = null;
-                    // 然后设置新的选中项
-                    navList.SelectedIndex = 5; // "在线比赛"的索引
-                }
+                var contestListView = new ContestListView(_userId);
+                mainWindow.SetContent(contestListView);
             }
         }
     }

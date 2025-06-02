@@ -41,6 +41,14 @@ namespace SudokuGame.Views
         private void LoadContests()
         {
             var contests = _databaseService.GetContests();
+            
+            // 检查用户是否已加入每个比赛
+            foreach (var contest in contests)
+            {
+                var (success, _) = _databaseService.JoinContest(contest.Id, _userId);
+                contest.HasJoined = success;
+            }
+            
             var contestList = this.FindControl<ItemsControl>("ContestList");
             if (contestList != null)
             {
@@ -53,32 +61,42 @@ namespace SudokuGame.Views
             var button = (Button)sender;
             var contest = (Contest)button.DataContext;
 
-            var (success, message) = _databaseService.JoinContest(contest.Id, _userId);
-            
-            var messageWindow = new Window
-            {
-                Title = success ? "成功" : "错误",
-                Content = message,
-                Width = 300,
-                Height = 150,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner
-            };
-            
             var mainWindow = this.FindAncestorOfType<MainWindow>();
-            if (mainWindow != null)
+            if (mainWindow == null) return;
+
+            ContestView contestView;
+            if (contest.HasJoined)
             {
-                await messageWindow.ShowDialog(mainWindow);
+                // 直接打开比赛页面
+                contestView = new ContestView(contest.Id, _userId);
+                mainWindow.SetContent(contestView);
+                return;
             }
 
-            if (success)
+            // 尝试加入比赛
+            var (success, message) = _databaseService.JoinContest(contest.Id, _userId);
+            
+            if (!success)
             {
-                // 打开比赛页面
-                var contestView = new ContestView(contest.Id, _userId);
-                if (mainWindow != null)
+                var messageWindow = new Window
                 {
-                    mainWindow.Content = contestView;
-                }
+                    Title = "错误",
+                    Content = message,
+                    Width = 300,
+                    Height = 150,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                
+                await messageWindow.ShowDialog(mainWindow);
+                return;
             }
+
+            // 打开比赛页面
+            contestView = new ContestView(contest.Id, _userId);
+            mainWindow.SetContent(contestView);
+            
+            // 刷新列表
+            LoadContests();
         }
     }
 } 

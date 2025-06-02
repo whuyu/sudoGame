@@ -11,6 +11,7 @@ namespace SudokuGame.Models
         public int Duration { get; set; }
         public string Status { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool HasJoined { get; set; }
     }
 
     public class ContestParticipant

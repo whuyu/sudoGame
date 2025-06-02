@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="using:Avalonia.Data.Converters"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="SudokuGame.Views.ContestListView">
     <Grid>
@@ -62,9 +63,20 @@
                                     </StackPanel>
 
                                     <Button Grid.Column="1"
-                                            Content="加入比赛"
                                             VerticalAlignment="Center"
-                                            Click="JoinContest_Click"/>
+                                            Classes.primary="{Binding !HasJoined}"
+                                            Click="JoinContest_Click">
+                                        <Panel>
+                                            <TextBlock IsVisible="{Binding !HasJoined}" Text="加入比赛"/>
+                                            <TextBlock IsVisible="{Binding HasJoined}" Text="查看比赛"/>
+                                        </Panel>
+                                        <Button.Styles>
+                                            <Style Selector="Button.primary">
+                                                <Setter Property="Background" Value="#409EFF"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Style>
+                                        </Button.Styles>
+                                    </Button>
                                 </Grid>
                             </Grid>
                         </Border>
