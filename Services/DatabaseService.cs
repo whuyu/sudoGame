@@ -563,5 +563,28 @@ namespace SudokuGame.Services
                 return "user"; // 如果发生错误，默认返回普通用户角色
             }
         }
+        
+        // 检查用户是否已加入比赛
+        public bool HasUserJoinedContest(int contestId, int userId)
+        {
+            try
+            {
+                string query = @"
+                    SELECT COUNT(*) FROM contest_participants 
+                    WHERE contest_id = @contestId AND user_id = @userId";
+
+                using (var cmd = new MySqlCommand(query, _connection))
+                {
+                    cmd.Parameters.AddWithValue("@contestId", contestId);
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"检查用户参赛状态时出错: {ex.Message}");
+                return false;
+            }
+        }
     }
 } 

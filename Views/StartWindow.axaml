@@ -27,12 +27,14 @@
                 <TextBox Name="UsernameTextBox"
                          Watermark="用户名"
                          FontSize="16"
-                         Padding="10"/>
+                         Padding="10"
+                         KeyDown="UsernameTextBox_KeyDown"/>
                 <TextBox Name="PasswordTextBox"
                          Watermark="密码"
                          FontSize="16"
                          Padding="10"
-                         PasswordChar="●"/>
+                         PasswordChar="●"
+                         KeyDown="PasswordTextBox_KeyDown"/>
                 <Button Name="LoginButton"
                         Content="登录"
                         FontSize="18"
@@ -40,7 +42,8 @@
                         Padding="30,15"
                         HorizontalAlignment="Center"
                         Background="#409EFF"
-                        Foreground="White"/>
+                        Foreground="White"
+                        IsDefault="True"/>
                 <Button Name="ShowRegisterButton"
                         Content="没有账号？点击注册"
                         FontSize="14"

@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -78,6 +79,13 @@ namespace SudokuGame.Views
             {
                 favoriteButton.Click += FavoriteButton_Click;
             }
+
+            // 初始化退出登录按钮
+            var logoutButton = this.FindControl<Button>("LogoutButton");
+            if (logoutButton != null)
+            {
+                logoutButton.Click += LogoutButton_Click;
+            }
         }
 
         private void SetupEventHandlers()
@@ -136,32 +144,69 @@ namespace SudokuGame.Views
                         var cell = new TextBox
                         {
                             MaxLength = 1,
+                            MinWidth = 60,
+                            MinHeight = 60,
                             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
                             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
                             HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                             VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
                             FontSize = 24,
                             FontWeight = FontWeight.Bold,
+                            Margin = new Thickness(0),
+                            Padding = new Thickness(0),
                             BorderThickness = new Thickness(
-                                j % 3 == 0 ? 2 : 0.5,
-                                i % 3 == 0 ? 2 : 0.5,
-                                j == 8 ? 2 : 0.5,
-                                i == 8 ? 2 : 0.5
+                                j % 3 == 0 ? 3 : 1,  // 左边框：3x3格子的开始处加粗
+                                i % 3 == 0 ? 3 : 1,  // 上边框：3x3格子的开始处加粗
+                                j == 8 ? 3 : (j % 3 == 2 ? 3 : 1),  // 右边框：3x3格子的结束处加粗
+                                i == 8 ? 3 : (i % 3 == 2 ? 3 : 1)   // 下边框：3x3格子的结束处加粗
                             ),
-                            BorderBrush = Brushes.Black,
-                            Margin = new Thickness(0)
+                            BorderBrush = new SolidColorBrush(Color.FromRgb(51, 51, 51))  // 使用深灰色边框 #333333
                         };
 
                         // 设置输入验证
                         cell.TextInput += (s, e) =>
                         {
-                            if (!char.IsDigit(e.Text[0]) || e.Text[0] == '0')
+                            // 只允许输入1-9的数字
+                            if (e.Text.Length == 1 && (e.Text[0] < '1' || e.Text[0] > '9'))
                             {
                                 e.Handled = true;
                             }
                         };
 
-                        // 添加文本变更事件处理，确保可编辑单元格颜色一致性
+                        // 添加文本变更事件处理
+                        cell.PropertyChanged += (s, e) =>
+                        {
+                            if (e.Property == TextBox.TextProperty && s is TextBox textBox)
+                            {
+                                string text = textBox.Text ?? "";
+                                if (text.Length > 0)
+                                {
+                                    // 检查是否是1-9的数字
+                                    if (!char.IsDigit(text[0]) || text[0] == '0')
+                                    {
+                                        textBox.Text = "";
+                                    }
+                                }
+                            }
+                        };
+
+                        // 添加键盘事件处理
+                        cell.KeyDown += (s, e) =>
+                        {
+                            // 允许使用退格键和删除键
+                            if (e.Key != Avalonia.Input.Key.Back && e.Key != Avalonia.Input.Key.Delete)
+                            {
+                                // 如果不是数字键（包括小键盘的数字键），则阻止输入
+                                bool isNumericKey = (e.Key >= Avalonia.Input.Key.D1 && e.Key <= Avalonia.Input.Key.D9) ||
+                                                  (e.Key >= Avalonia.Input.Key.NumPad1 && e.Key <= Avalonia.Input.Key.NumPad9);
+                                if (!isNumericKey)
+                                {
+                                    e.Handled = true;
+                                }
+                            }
+                        };
+
+                        // 设置文本颜色
                         cell.TextChanged += (s, e) =>
                         {
                             if (!cell.IsReadOnly)
@@ -201,11 +246,11 @@ namespace SudokuGame.Views
                     cells[i, j].IsReadOnly = puzzle[i, j] != 0;
                     cells[i, j].IsEnabled = false; // 初始状态下禁用所有单元格
                     
-                    // 统一设置单元格颜色
+                   
                     if (cells[i, j].IsReadOnly)
                     {
                         // 初始数字（只读单元格）使用浅灰色背景和深灰色文字
-                        cells[i, j].Background = new SolidColorBrush(Color.FromRgb(240, 240, 240)); // #F0F0F0
+                        cells[i, j].Background = new SolidColorBrush(Color.FromRgb(245, 245, 245)); // 更浅的灰色 #F5F5F5
                         cells[i, j].Foreground = new SolidColorBrush(Color.FromRgb(51, 51, 51)); // #333333
                     }
                     else
@@ -215,8 +260,16 @@ namespace SudokuGame.Views
                         cells[i, j].Foreground = new SolidColorBrush(Color.FromRgb(64, 158, 255)); // #409EFF
                     }
 
-                    // 统一设置边框
-                    cells[i, j].BorderBrush = Brushes.Black;
+                     // 统一设置单元格边框
+                    cells[i, j].BorderThickness = new Thickness(
+                        j % 3 == 0 ? 3 : 1,  // 左边框：3x3格子的开始处加粗
+                        i % 3 == 0 ? 3 : 1,  // 上边框：3x3格子的开始处加粗
+                        j == 8 ? 3 : (j % 3 == 2 ? 3 : 1),  // 右边框：3x3格子的结束处加粗
+                        i == 8 ? 3 : (i % 3 == 2 ? 3 : 1)   // 下边框：3x3格子的结束处加粗
+                    );
+                    cells[i, j].BorderBrush = new SolidColorBrush(Color.FromRgb(51, 51, 51));
+
+                    // 设置单元格背景和文字颜色
                 }
             }
         }
@@ -743,6 +796,16 @@ namespace SudokuGame.Views
                     }
                 }
             }
+        }
+
+        private void LogoutButton_Click(object? sender, RoutedEventArgs e)
+        {
+            // 创建并显示新的登录窗口
+            var startWindow = new StartWindow();
+            startWindow.Show();
+
+            // 关闭当前窗口
+            Close();
         }
     }
 } 

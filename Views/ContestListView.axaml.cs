@@ -42,11 +42,11 @@ namespace SudokuGame.Views
         {
             var contests = _databaseService.GetContests();
             
-            // 检查用户是否已加入每个比赛
+            // 检查用户是否已加入每个比赛，但不自动加入
             foreach (var contest in contests)
             {
-                var (success, _) = _databaseService.JoinContest(contest.Id, _userId);
-                contest.HasJoined = success;
+                // 只检查用户是否已加入比赛
+                contest.HasJoined = _databaseService.HasUserJoinedContest(contest.Id, _userId);
             }
             
             var contestList = this.FindControl<ItemsControl>("ContestList");
@@ -90,6 +90,9 @@ namespace SudokuGame.Views
                 await messageWindow.ShowDialog(mainWindow);
                 return;
             }
+
+            // 加入成功后更新状态
+            contest.HasJoined = true;
 
             // 打开比赛页面
             contestView = new ContestView(contest.Id, _userId);

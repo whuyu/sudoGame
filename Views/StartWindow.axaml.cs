@@ -264,6 +264,24 @@ namespace SudokuGame.Views
             };
             await dialog.ShowDialog(this);
         }
+//按键上下实现跳转focus
+        private void UsernameTextBox_KeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+        {
+            if (e.Key == Avalonia.Input.Key.Down)
+            {
+                passwordTextBox.Focus();
+                e.Handled = true;
+            }
+        }
+
+        private void PasswordTextBox_KeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+        {
+            if (e.Key == Avalonia.Input.Key.Up)
+            {
+                usernameTextBox.Focus();
+                e.Handled = true;
+            }
+        }
     }
 
     // 创建一个匿名观察者类来处理Observable订阅

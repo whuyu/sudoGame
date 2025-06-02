@@ -21,6 +21,23 @@
         <Style Selector="Button.active">
             <Setter Property="Background" Value="#67C23A"/>
         </Style>
+        
+        <!-- 添加TextBox的全局样式 -->
+        <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="BorderBrush" Value="#333333"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CaretBrush" Value="#409EFF"/>
+            <Setter Property="SelectionBrush" Value="#409EFF"/>
+            <Setter Property="SelectionForegroundBrush" Value="White"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+        </Style>
+        <!-- 确保TextBox在只读状态下也保持边框样式 -->
+        <Style Selector="TextBox:readonly">
+            <Setter Property="BorderBrush" Value="#333333"/>
+            <Setter Property="CornerRadius" Value="0"/>
+        </Style>
     </Window.Styles>
 
     <Grid>
@@ -31,25 +48,42 @@
 
         <!-- 左侧导航栏 -->
         <Border Grid.Column="0" Background="White" BoxShadow="2 0 10 0 #15000000">
-            <StackPanel>
-                <TextBlock Text="数独游戏" 
-                         FontSize="24" 
-                         FontWeight="Bold" 
-                         HorizontalAlignment="Center"
-                         Margin="0,20,0,30"/>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="数独游戏" 
+                             FontSize="24" 
+                             FontWeight="Bold" 
+                             HorizontalAlignment="Center"
+                             Margin="0,20,0,30"/>
 
-                <ListBox x:Name="NavList" 
-                        Background="Transparent"
-                        BorderThickness="0">
-                    <ListBoxItem Content="排行榜"/>
-                    <ListBoxItem Content="随机一题"/>
-                    <ListBoxItem Content="我的题库"/>
-                    <ListBoxItem Content="官方题单"/>
-                    <ListBoxItem Content="我的成就"/>
-                    <ListBoxItem Content="在线比赛"/>
-                    <ListBoxItem Content="游戏管理"/>
-                </ListBox>
-            </StackPanel>
+                    <ListBox x:Name="NavList" 
+                            Background="Transparent"
+                            BorderThickness="0">
+                        <ListBoxItem Content="排行榜"/>
+                        <ListBoxItem Content="随机一题"/>
+                        <ListBoxItem Content="我的题库"/>
+                        <ListBoxItem Content="官方题单"/>
+                        <ListBoxItem Content="我的成就"/>
+                        <ListBoxItem Content="在线比赛"/>
+                        <ListBoxItem Content="游戏管理"/>
+                    </ListBox>
+                </StackPanel>
+
+                <!-- 退出登录按钮 -->
+                <Button Grid.Row="2"
+                        x:Name="LogoutButton"
+                        Content="退出登录"
+                        Margin="20,0,20,20"
+                        Height="40"
+                        Background="#F56C6C"
+                        HorizontalAlignment="Stretch"/>
+            </Grid>
         </Border>
 
         <!-- 右侧内容区 -->
@@ -84,8 +118,11 @@
                             Background="White"
                             BorderBrush="Black"
                             BorderThickness="2"
+                            Padding="0"
+                            Margin="0"
                             BoxShadow="0 2 10 0 #15000000">
-                        <Grid x:Name="SudokuGrid">
+                        <Grid x:Name="SudokuGrid" 
+                              Margin="0">
                             <!-- 网格将在代码中动态生成 -->
                         </Grid>
                     </Border>
