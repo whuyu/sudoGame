@@ -80,6 +80,13 @@ namespace SudokuGame.Views
                 favoriteButton.Click += FavoriteButton_Click;
             }
 
+            // 初始化保存按钮
+            var saveButton = this.FindControl<Button>("SaveButton");
+            if (saveButton != null)
+            {
+                saveButton.Click += SaveButton_Click;
+            }
+
             // 初始化退出登录按钮
             var logoutButton = this.FindControl<Button>("LogoutButton");
             if (logoutButton != null)
@@ -104,7 +111,7 @@ namespace SudokuGame.Views
                     var buttons = buttonPanel.Children;
                     if (buttons.Count >= 3)
                     {
-                        ((Button)buttons[0]).Click += (s, e) => GenerateNewGame();
+                        ((Button)buttons[0]).Click += ClearButton_Click;
                         ((Button)buttons[1]).Click += (s, e) => CheckSolution();
                         ((Button)buttons[2]).Click += StartTimerButton_Click;
                     }
@@ -113,6 +120,102 @@ namespace SudokuGame.Views
             catch (Exception ex)
             {
                 Debug.WriteLine($"设置事件处理器错误: {ex.Message}");
+            }
+        }
+
+        private async void ClearButton_Click(object? sender, RoutedEventArgs e)
+        {
+            // 创建确认对话框
+            var messageWindow = new Window
+            {
+                Title = "确认",
+                Content = new StackPanel
+                {
+                    Margin = new Thickness(20),
+                    Spacing = 20,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = "确定要清空所有已填写的内容吗？",
+                            TextWrapping = TextWrapping.Wrap
+                        },
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            Spacing = 10,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                            Children =
+                            {
+                                new Button
+                                {
+                                    Content = "取消",
+                                    Width = 80,
+                                    Height = 30
+                                },
+                                new Button
+                                {
+                                    Content = "确定",
+                                    Width = 80,
+                                    Height = 30,
+                                    Background = new SolidColorBrush(Color.FromRgb(244, 67, 54))
+                                }
+                            }
+                        }
+                    }
+                },
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+
+            // 获取按钮引用
+            var cancelButton = ((messageWindow.Content as StackPanel)?.Children[1] as StackPanel)?.Children[0] as Button;
+            var confirmButton = ((messageWindow.Content as StackPanel)?.Children[1] as StackPanel)?.Children[1] as Button;
+
+            var tcs = new TaskCompletionSource<bool>();
+
+            if (cancelButton != null)
+                cancelButton.Click += (s, e) =>
+                {
+                    tcs.SetResult(false);
+                    messageWindow.Close();
+                };
+
+            if (confirmButton != null)
+                confirmButton.Click += (s, e) =>
+                {
+                    tcs.SetResult(true);
+                    messageWindow.Close();
+                };
+
+            // 显示对话框
+            await messageWindow.ShowDialog(this);
+
+            // 等待用户响应
+            if (await tcs.Task)
+            {
+                // 用户点击了确定，执行清空操作
+                for (int i = 0; i < 9; i++)
+                {
+                    for (int j = 0; j < 9; j++)
+                    {
+                        if (!cells[i, j].IsReadOnly)
+                        {
+                            cells[i, j].Text = "";
+                        }
+                    }
+                }
+
+                // 如果是已保存的题目，更新当前面板状态
+                if (currentPuzzle != null)
+                {
+                    var currentBoard = new char[81];
+                    for (int i = 0; i < 81; i++)
+                    {
+                        currentBoard[i] = currentPuzzle.InitialBoard[i];
+                    }
+                    currentPuzzle.CurrentBoard = new string(currentBoard);
+                }
             }
         }
 
@@ -399,6 +502,7 @@ namespace SudokuGame.Views
             // 创建新的数独题目对象
             currentPuzzle = new SudokuPuzzle
             {
+                Id = 0, // 确保新题目的ID为0
                 InitialBoard = BoardToString(puzzle),
                 CurrentBoard = BoardToString(puzzle),
                 Solution = BoardToString(solution),
@@ -469,7 +573,7 @@ namespace SudokuGame.Views
                 }
 
                 // 刷新题库视图
-                myPuzzlesView.RefreshPuzzles();
+                myPuzzlesView?.RefreshPuzzles();
             }
             catch (Exception ex)
             {
@@ -743,17 +847,47 @@ namespace SudokuGame.Views
                 }
             }
 
-            // 显示题目
-            DisplayPuzzle();
+            // 显示题目，包括已保存的进度
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    int index = i * 9 + j;
+                    char currentValue = puzzle.CurrentBoard[index];
+                    var cell = cells[i, j];
 
-            // 重置游戏状态
+                    // 设置初始值（不可编辑）
+                    if (puzzle.InitialBoard[index] != '0')
+                    {
+                        cell.Text = puzzle.InitialBoard[index].ToString();
+                        cell.IsReadOnly = true;
+                        cell.Background = new SolidColorBrush(Color.FromRgb(240, 240, 240));
+                        cell.Foreground = new SolidColorBrush(Color.FromRgb(51, 51, 51));
+                    }
+                    // 设置用户填写的值（可编辑）
+                    else
+                    {
+                        cell.Text = currentValue == '0' ? "" : currentValue.ToString();
+                        cell.IsReadOnly = false;
+                        cell.Background = Brushes.White;
+                        cell.Foreground = new SolidColorBrush(Color.FromRgb(64, 158, 255));
+                    }
+                }
+            }
+
+            // 设置游戏时间
             gameStopwatch.Reset();
             displayTimer.Stop();
             var timerDisplay = this.FindControl<TextBlock>("TimerDisplay");
-            if (timerDisplay != null)
+            if (timerDisplay != null && puzzle.TotalPlayTime != TimeSpan.Zero)
+            {
+                timerDisplay.Text = $"{puzzle.TotalPlayTime.Minutes:D2}:{puzzle.TotalPlayTime.Seconds:D2}:{puzzle.TotalPlayTime.Milliseconds:D3}";
+            }
+            else if (timerDisplay != null)
             {
                 timerDisplay.Text = "00:00:000";
             }
+
             isGameStarted = false;
             var startButton = this.FindControl<Button>("StartButton");
             if (startButton != null)
@@ -805,6 +939,73 @@ namespace SudokuGame.Views
 
             // 关闭当前窗口
             Close();
+        }
+
+        private async void SaveButton_Click(object? sender, RoutedEventArgs e)
+        {
+            if (currentPuzzle == null) return;
+
+            try
+            {
+                // 更新当前面板状态
+                var currentBoard = new char[81];
+                for (int i = 0; i < 9; i++)
+                {
+                    for (int j = 0; j < 9; j++)
+                    {
+                        var text = cells[i, j].Text;
+                        currentBoard[i * 9 + j] = string.IsNullOrEmpty(text) ? '0' : text[0];
+                    }
+                }
+                currentPuzzle.CurrentBoard = new string(currentBoard);
+
+                // 更新最后游玩时间和总游玩时间
+                currentPuzzle.LastPlayedAt = DateTime.Now;
+                currentPuzzle.TotalPlayTime = gameStopwatch.Elapsed;
+
+                // 如果是新题目（未收藏），先保存题目
+                if (currentPuzzle.Id == 0)
+                {
+                    _databaseService.SavePuzzle(currentPuzzle, _userId);
+                    _isFavorited = true;
+                    if (favoriteButton != null)
+                    {
+                        favoriteButton.Classes.Add("active");
+                    }
+                }
+                else
+                {
+                    // 更新已存在的题目
+                    _databaseService.UpdatePuzzle(currentPuzzle, _userId);
+                }
+
+                // 刷新题库视图
+                myPuzzlesView?.RefreshPuzzles();
+
+                // 显示成功消息
+                var messageWindow = new Window
+                {
+                    Title = "成功",
+                    Content = "进度已保存",
+                    Width = 200,
+                    Height = 100,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                await messageWindow.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                // 显示错误消息
+                var messageWindow = new Window
+                {
+                    Title = "错误",
+                    Content = $"保存失败: {ex.Message}",
+                    Width = 300,
+                    Height = 150,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                await messageWindow.ShowDialog(this);
+            }
         }
     }
 } 
