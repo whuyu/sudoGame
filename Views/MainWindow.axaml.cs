@@ -399,7 +399,6 @@ namespace SudokuGame.Views
             // 创建新的数独题目对象
             currentPuzzle = new SudokuPuzzle
             {
-                UserId = _userId,
                 InitialBoard = BoardToString(puzzle),
                 CurrentBoard = BoardToString(puzzle),
                 Solution = BoardToString(solution),
@@ -429,7 +428,7 @@ namespace SudokuGame.Views
                 if (!_isFavorited)
                 {
                     // 保存到数据库
-                    _databaseService.SavePuzzle(currentPuzzle);
+                    _databaseService.SavePuzzle(currentPuzzle, _userId);
                     _isFavorited = true;
                     if (favoriteButton != null)
                     {
@@ -450,7 +449,7 @@ namespace SudokuGame.Views
                 else
                 {
                     // 从数据库中删除
-                    _databaseService.DeletePuzzle(currentPuzzle.Id);
+                    _databaseService.DeletePuzzle(currentPuzzle.Id, _userId);
                     _isFavorited = false;
                     if (favoriteButton != null)
                     {

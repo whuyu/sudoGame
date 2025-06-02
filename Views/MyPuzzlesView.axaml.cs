@@ -73,7 +73,6 @@ namespace SudokuGame.Views
                 // 创建新的数独题目对象
                 var newPuzzle = new SudokuPuzzle
                 {
-                    UserId = _userId,
                     InitialBoard = initialBoard,
                     CurrentBoard = initialBoard, // 初始时当前状态与初始状态相同
                     Solution = solution,
@@ -85,7 +84,7 @@ namespace SudokuGame.Views
                 };
 
                 // 保存到数据库
-                _databaseService.SavePuzzle(newPuzzle);
+                _databaseService.SavePuzzle(newPuzzle, _userId);
 
                 // 刷新列表
                 LoadPuzzles();
@@ -251,11 +250,9 @@ namespace SudokuGame.Views
                 try
                 {
                     // 从数据库中删除
-                    _databaseService.DeletePuzzle(puzzleToDelete.Id);
+                    _databaseService.DeletePuzzle(puzzleToDelete.Id, _userId);
                     // 从列表中移除
                     puzzles.Remove(puzzleToDelete);
-
-                    
                 }
                 catch (Exception ex)
                 {

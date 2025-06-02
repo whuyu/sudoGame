@@ -56,24 +56,24 @@
                 </Grid.RowDefinitions>
                 
                 <StackPanel Grid.Row="0">
-                    <TextBlock Text="数独游戏" 
-                             FontSize="24" 
-                             FontWeight="Bold" 
-                             HorizontalAlignment="Center"
-                             Margin="0,20,0,30"/>
+                <TextBlock Text="数独游戏" 
+                         FontSize="24" 
+                         FontWeight="Bold" 
+                         HorizontalAlignment="Center"
+                         Margin="0,20,0,30"/>
 
-                    <ListBox x:Name="NavList" 
-                            Background="Transparent"
-                            BorderThickness="0">
-                        <ListBoxItem Content="排行榜"/>
-                        <ListBoxItem Content="随机一题"/>
-                        <ListBoxItem Content="我的题库"/>
-                        <ListBoxItem Content="官方题单"/>
-                        <ListBoxItem Content="我的成就"/>
-                        <ListBoxItem Content="在线比赛"/>
+                <ListBox x:Name="NavList" 
+                        Background="Transparent"
+                        BorderThickness="0">
+                    <ListBoxItem Content="排行榜"/>
+                    <ListBoxItem Content="随机一题"/>
+                    <ListBoxItem Content="我的题库"/>
+                    <ListBoxItem Content="官方题单"/>
+                    <ListBoxItem Content="我的成就"/>
+                    <ListBoxItem Content="在线比赛"/>
                         <ListBoxItem Content="游戏管理"/>
-                    </ListBox>
-                </StackPanel>
+                </ListBox>
+            </StackPanel>
 
                 <!-- 退出登录按钮 -->
                 <Button Grid.Row="2"

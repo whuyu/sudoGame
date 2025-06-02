@@ -101,19 +101,34 @@ namespace SudokuGame.Services
                 string createPuzzlesTableQuery = @"
                     CREATE TABLE IF NOT EXISTS sudoku_puzzles (
                         id INT AUTO_INCREMENT PRIMARY KEY,
-                        user_id INT NOT NULL,
                         initial_board VARCHAR(81) NOT NULL,
-                        current_board VARCHAR(81) NOT NULL,
                         solution VARCHAR(81) NOT NULL,
                         difficulty VARCHAR(10) NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        last_played_at TIMESTAMP NULL,
-                        total_play_time INT DEFAULT 0,
-                        is_completed BOOLEAN DEFAULT FALSE,
-                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );";
 
                 using (var cmd = new MySqlCommand(createPuzzlesTableQuery, _connection))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+
+                // 创建user_puzzles关系表
+                string createUserPuzzlesTableQuery = @"
+                    CREATE TABLE IF NOT EXISTS user_puzzles (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT NOT NULL,
+                        puzzle_id INT NOT NULL,
+                        current_board VARCHAR(81) NOT NULL,
+                        last_played_at TIMESTAMP NULL,
+                        total_play_time INT DEFAULT 0,
+                        is_completed BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        FOREIGN KEY (puzzle_id) REFERENCES sudoku_puzzles(id) ON DELETE CASCADE,
+                        UNIQUE KEY unique_user_puzzle (user_id, puzzle_id)
+                    );";
+
+                using (var cmd = new MySqlCommand(createUserPuzzlesTableQuery, _connection))
                 {
                     cmd.ExecuteNonQuery();
                 }
@@ -179,9 +194,12 @@ namespace SudokuGame.Services
         {
             var puzzles = new List<SudokuPuzzle>();
             string query = @"
-                SELECT * FROM sudoku_puzzles 
-                WHERE user_id = @userId 
-                ORDER BY created_at DESC";
+                SELECT p.id, p.initial_board, p.solution, p.difficulty, p.created_at,
+                       up.current_board, up.last_played_at, up.total_play_time, up.is_completed
+                FROM sudoku_puzzles p
+                INNER JOIN user_puzzles up ON p.id = up.puzzle_id
+                WHERE up.user_id = @userId 
+                ORDER BY up.created_at DESC";
 
             using (var cmd = new MySqlCommand(query, _connection))
             {
@@ -193,7 +211,6 @@ namespace SudokuGame.Services
                         puzzles.Add(new SudokuPuzzle
                         {
                             Id = reader.GetInt32("id"),
-                            UserId = reader.GetInt32("user_id"),
                             InitialBoard = reader.GetString("initial_board"),
                             CurrentBoard = reader.GetString("current_board"),
                             Solution = reader.GetString("solution"),
@@ -211,48 +228,40 @@ namespace SudokuGame.Services
             return puzzles;
         }
 
-        public void SavePuzzle(SudokuPuzzle puzzle)
+        public void SavePuzzle(SudokuPuzzle puzzle, int userId)
         {
-            string query = @"
+            string puzzleQuery = @"
                 INSERT INTO sudoku_puzzles (
-                    user_id, initial_board, current_board, solution, 
-                    difficulty, last_played_at, total_play_time, is_completed
+                    initial_board, solution, difficulty
                 ) VALUES (
-                    @userId, @initialBoard, @currentBoard, @solution,
-                    @difficulty, @lastPlayedAt, @totalPlayTime, @isCompleted
+                    @initialBoard, @solution, @difficulty
                 )";
 
-            using (var cmd = new MySqlCommand(query, _connection))
+            using (var cmd = new MySqlCommand(puzzleQuery, _connection))
             {
-                cmd.Parameters.AddWithValue("@userId", puzzle.UserId);
                 cmd.Parameters.AddWithValue("@initialBoard", puzzle.InitialBoard);
-                cmd.Parameters.AddWithValue("@currentBoard", puzzle.CurrentBoard);
                 cmd.Parameters.AddWithValue("@solution", puzzle.Solution);
                 cmd.Parameters.AddWithValue("@difficulty", puzzle.Difficulty);
-                cmd.Parameters.AddWithValue("@lastPlayedAt", puzzle.LastPlayedAt ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@totalPlayTime", (int)puzzle.TotalPlayTime.TotalSeconds);
-                cmd.Parameters.AddWithValue("@isCompleted", puzzle.IsCompleted);
                 cmd.ExecuteNonQuery();
                 
                 // 获取自动生成的ID
                 puzzle.Id = (int)cmd.LastInsertedId;
             }
-        }
 
-        public void UpdatePuzzle(SudokuPuzzle puzzle)
-        {
-            string query = @"
-                UPDATE sudoku_puzzles 
-                SET current_board = @currentBoard,
-                    last_played_at = @lastPlayedAt,
-                    total_play_time = @totalPlayTime,
-                    is_completed = @isCompleted
-                WHERE id = @id AND user_id = @userId";
+            // 创建用户-题目关系
+            string userPuzzleQuery = @"
+                INSERT INTO user_puzzles (
+                    user_id, puzzle_id, current_board,
+                    last_played_at, total_play_time, is_completed
+                ) VALUES (
+                    @userId, @puzzleId, @currentBoard,
+                    @lastPlayedAt, @totalPlayTime, @isCompleted
+                )";
 
-            using (var cmd = new MySqlCommand(query, _connection))
+            using (var cmd = new MySqlCommand(userPuzzleQuery, _connection))
             {
-                cmd.Parameters.AddWithValue("@id", puzzle.Id);
-                cmd.Parameters.AddWithValue("@userId", puzzle.UserId);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@puzzleId", puzzle.Id);
                 cmd.Parameters.AddWithValue("@currentBoard", puzzle.CurrentBoard);
                 cmd.Parameters.AddWithValue("@lastPlayedAt", puzzle.LastPlayedAt ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@totalPlayTime", (int)puzzle.TotalPlayTime.TotalSeconds);
@@ -261,13 +270,56 @@ namespace SudokuGame.Services
             }
         }
 
-        public void DeletePuzzle(int puzzleId)
+        public void UpdatePuzzle(SudokuPuzzle puzzle, int userId)
         {
-            string query = "DELETE FROM sudoku_puzzles WHERE id = @id";
+            string query = @"
+                UPDATE user_puzzles 
+                SET current_board = @currentBoard,
+                    last_played_at = @lastPlayedAt,
+                    total_play_time = @totalPlayTime,
+                    is_completed = @isCompleted
+                WHERE puzzle_id = @puzzleId AND user_id = @userId";
+
             using (var cmd = new MySqlCommand(query, _connection))
             {
-                cmd.Parameters.AddWithValue("@id", puzzleId);
+                cmd.Parameters.AddWithValue("@puzzleId", puzzle.Id);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@currentBoard", puzzle.CurrentBoard);
+                cmd.Parameters.AddWithValue("@lastPlayedAt", puzzle.LastPlayedAt ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@totalPlayTime", (int)puzzle.TotalPlayTime.TotalSeconds);
+                cmd.Parameters.AddWithValue("@isCompleted", puzzle.IsCompleted);
                 cmd.ExecuteNonQuery();
+            }
+        }
+
+        public void DeletePuzzle(int puzzleId, int userId)
+        {
+            // 首先删除用户-题目关系
+            string deleteUserPuzzleQuery = "DELETE FROM user_puzzles WHERE puzzle_id = @puzzleId AND user_id = @userId";
+            using (var cmd = new MySqlCommand(deleteUserPuzzleQuery, _connection))
+            {
+                cmd.Parameters.AddWithValue("@puzzleId", puzzleId);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.ExecuteNonQuery();
+            }
+
+            // 检查是否还有其他用户收藏了这个题目
+            string checkQuery = "SELECT COUNT(*) FROM user_puzzles WHERE puzzle_id = @puzzleId";
+            using (var cmd = new MySqlCommand(checkQuery, _connection))
+            {
+                cmd.Parameters.AddWithValue("@puzzleId", puzzleId);
+                int count = Convert.ToInt32(cmd.ExecuteScalar());
+                
+                // 如果没有其他用户收藏，则删除题目
+                if (count == 0)
+                {
+                    string deletePuzzleQuery = "DELETE FROM sudoku_puzzles WHERE id = @puzzleId";
+                    using (var deleteCmd = new MySqlCommand(deletePuzzleQuery, _connection))
+                    {
+                        deleteCmd.Parameters.AddWithValue("@puzzleId", puzzleId);
+                        deleteCmd.ExecuteNonQuery();
+                    }
+                }
             }
         }
 
@@ -396,7 +448,8 @@ namespace SudokuGame.Services
         {
             var puzzles = new List<SudokuPuzzle>();
             string query = @"
-                SELECT p.* FROM sudoku_puzzles p
+                SELECT p.id, p.initial_board, p.solution, p.difficulty, p.created_at
+                FROM sudoku_puzzles p
                 INNER JOIN contest_puzzles cp ON p.id = cp.puzzle_id
                 WHERE cp.contest_id = @contestId
                 ORDER BY cp.order_index";
@@ -411,17 +464,14 @@ namespace SudokuGame.Services
                         puzzles.Add(new SudokuPuzzle
                         {
                             Id = reader.GetInt32("id"),
-                            UserId = reader.GetInt32("user_id"),
                             InitialBoard = reader.GetString("initial_board"),
-                            CurrentBoard = reader.GetString("current_board"),
+                            CurrentBoard = reader.GetString("initial_board"), // 比赛题目初始状态
                             Solution = reader.GetString("solution"),
                             Difficulty = reader.GetString("difficulty"),
                             CreatedAt = reader.GetDateTime("created_at"),
-                            LastPlayedAt = reader.IsDBNull(reader.GetOrdinal("last_played_at")) 
-                                ? null 
-                                : reader.GetDateTime("last_played_at"),
-                            TotalPlayTime = TimeSpan.FromSeconds(reader.GetInt32("total_play_time")),
-                            IsCompleted = reader.GetBoolean("is_completed")
+                            LastPlayedAt = null,
+                            TotalPlayTime = TimeSpan.Zero,
+                            IsCompleted = false
                         });
                     }
                 }

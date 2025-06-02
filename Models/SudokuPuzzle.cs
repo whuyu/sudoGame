@@ -12,7 +12,6 @@ namespace SudokuGame.Models
         public DateTime? LastPlayedAt { get; set; }              // 最后游玩时间
         public TimeSpan TotalPlayTime { get; set; }             // 总游玩时间
         public bool IsCompleted { get; set; }                    // 是否完成
-        public int UserId { get; set; }                         // 关联的用户ID
         public string Difficulty { get; set; } = "普通";        // 难度级别
     }
 } 
