@@ -44,6 +44,7 @@ namespace SudokuGame.Services
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         username VARCHAR(50) UNIQUE NOT NULL,
                         password_hash VARCHAR(255) NOT NULL,
+                        role VARCHAR(20) DEFAULT 'user' NOT NULL,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );";
 
@@ -52,6 +53,50 @@ namespace SudokuGame.Services
                     cmd.ExecuteNonQuery();
                 }
 
+//////运行一遍有了role项和管理员账号之后可以把这一部分删了
+                string checkAdminQuery = "SELECT COUNT(*) FROM users WHERE username = 'admin'";
+                using (var cmd = new MySqlCommand(checkAdminQuery, _connection))
+                {
+                    if (Convert.ToInt32(cmd.ExecuteScalar()) == 0)
+                    {
+                        // 创建管理员用户
+                        string adminPassword = BCrypt.Net.BCrypt.HashPassword("1");
+                        string createAdminQuery = @"
+                            INSERT INTO users (username, password_hash, role) 
+                            VALUES ('admin', @passwordHash, 'admin')";
+                        
+                        using (var adminCmd = new MySqlCommand(createAdminQuery, _connection))
+                        {
+                            adminCmd.Parameters.AddWithValue("@passwordHash", adminPassword);
+                            adminCmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+
+                // 检查并添加role列（如果不存在）
+                string checkRoleColumnQuery = @"
+                    SELECT COUNT(*) 
+                    FROM information_schema.COLUMNS 
+                    WHERE TABLE_SCHEMA = 'sudoku_game' 
+                    AND TABLE_NAME = 'users' 
+                    AND COLUMN_NAME = 'role'";
+
+                using (var cmd = new MySqlCommand(checkRoleColumnQuery, _connection))
+                {
+                    if (Convert.ToInt32(cmd.ExecuteScalar()) == 0)
+                    {
+                        // role列不存在，添加它
+                        string addRoleColumnQuery = @"
+                            ALTER TABLE users 
+                            ADD COLUMN role VARCHAR(20) DEFAULT 'user' NOT NULL";
+
+                        using (var alterCmd = new MySqlCommand(addRoleColumnQuery, _connection))
+                        {
+                            alterCmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+/////////////删到这里
                 // 创建sudoku_puzzles表
                 string createPuzzlesTableQuery = @"
                     CREATE TABLE IF NOT EXISTS sudoku_puzzles (
@@ -230,7 +275,7 @@ namespace SudokuGame.Services
         {
             try
             {
-                using (var cmd = new MySqlCommand("SELECT id, password_hash FROM users WHERE username = @username", _connection))
+                using (var cmd = new MySqlCommand("SELECT id, password_hash, role FROM users WHERE username = @username", _connection))
                 {
                     cmd.Parameters.AddWithValue("@username", username);
                     using (var reader = cmd.ExecuteReader())
@@ -242,9 +287,10 @@ namespace SudokuGame.Services
 
                         int userId = reader.GetInt32("id");
                         string storedHash = reader.GetString("password_hash");
+                        string role = reader.GetString("role");
                         bool verified = BCrypt.Net.BCrypt.Verify(password, storedHash);
 
-                        return verified ? (true, "登录成功", userId) : (false, "用户名或密码错误", 0);
+                        return verified ? (true, $"登录成功 - 角色：{role}", userId) : (false, "用户名或密码错误", 0);
                     }
                 }
             }
@@ -499,6 +545,23 @@ namespace SudokuGame.Services
                 }
             }
             return participants;
+        }
+
+        public string GetUserRole(int userId)
+        {
+            try
+            {
+                using (var cmd = new MySqlCommand("SELECT role FROM users WHERE id = @userId", _connection))
+                {
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    var result = cmd.ExecuteScalar();
+                    return result?.ToString() ?? "user";
+                }
+            }
+            catch (Exception)
+            {
+                return "user"; // 如果发生错误，默认返回普通用户角色
+            }
         }
     }
 } 

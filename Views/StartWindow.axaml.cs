@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Threading.Tasks;
 using SudokuGame.Services;
 using Avalonia.Controls.Primitives;
+using System.Diagnostics;
 
 namespace SudokuGame.Views
 {
@@ -146,6 +147,7 @@ namespace SudokuGame.Views
             var (success, message, userId) = databaseService.ValidateUser(username, password);
             if (success)
             {
+                
                 _currentUserId = userId;
                 loginPanel.IsVisible = false;
                 startButton.IsVisible = true;

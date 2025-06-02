@@ -27,6 +27,7 @@ namespace SudokuGame.Views
         private Grid contentArea;
         private MyPuzzlesView myPuzzlesView;
         private readonly int _userId;
+        private readonly string _userRole;
         private MyPuzzlesView? _myPuzzlesView;
         private GameView? _gameView;
         private bool _isFavorited = false;
@@ -46,6 +47,9 @@ namespace SudokuGame.Views
             _userId = userId;
             _databaseService = new DatabaseService();
 
+            // 获取用户角色
+            _userRole = _databaseService.GetUserRole(userId);
+
             Dispatcher.UIThread.InvokeAsync(() =>
             {
                 try
@@ -53,6 +57,7 @@ namespace SudokuGame.Views
                     InitializeControls();
                     SetupGame();
                     SetupEventHandlers();
+                    InitializeNavigation();
                 }
                 catch (Exception ex)
                 {
@@ -253,6 +258,12 @@ namespace SudokuGame.Views
                     Grid.SetRow(contestListView, 0);
                     Grid.SetRowSpan(contestListView, 4);
                     contentArea.Children.Add(contestListView);
+                    break;
+                case "游戏管理":
+                    var gameManagementView = new GameManagementView(_userId);
+                    Grid.SetRow(gameManagementView, 0);
+                    Grid.SetRowSpan(gameManagementView, 4);
+                    contentArea.Children.Add(gameManagementView);
                     break;
             }
         }
@@ -714,6 +725,24 @@ namespace SudokuGame.Views
             Grid.SetRow(content, 0);
             Grid.SetRowSpan(content, 4);
             contentArea.Children.Add(content);
+        }
+
+        private void InitializeNavigation()
+        {
+            var navList = this.FindControl<ListBox>("NavList");
+            if (navList != null)
+            {
+                // 如果是普通用户，移除游戏管理选项
+                if (_userRole != "admin")
+                {
+                    var gameManagementItem = navList.Items.Cast<ListBoxItem>()
+                        .FirstOrDefault(item => item.Content?.ToString() == "游戏管理");
+                    if (gameManagementItem != null)
+                    {
+                        navList.Items.Remove(gameManagementItem);
+                    }
+                }
+            }
         }
     }
 } 

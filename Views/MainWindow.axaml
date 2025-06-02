@@ -47,6 +47,7 @@
                     <ListBoxItem Content="官方题单"/>
                     <ListBoxItem Content="我的成就"/>
                     <ListBoxItem Content="在线比赛"/>
+                    <ListBoxItem Content="游戏管理"/>
                 </ListBox>
             </StackPanel>
         </Border>

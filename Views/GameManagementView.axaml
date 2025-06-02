@@ -1,0 +1,178 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="SudokuGame.Views.GameManagementView">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="游戏管理" 
+                 FontSize="24" 
+                 FontWeight="Bold"
+                 HorizontalAlignment="Center"
+                 Margin="0,20,0,20"/>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="20">
+                <!-- 创建比赛 -->
+                <Border Background="White"
+                        Margin="0,0,0,20"
+                        CornerRadius="8"
+                        BoxShadow="0 2 10 0 #15000000">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="创建比赛"
+                                 FontSize="20"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,15"/>
+                        
+                        <TextBox Name="ContestTitleTextBox"
+                                 Watermark="比赛标题"
+                                 Margin="0,0,0,10"/>
+                        
+                        <TextBox Name="ContestDescriptionTextBox"
+                                 Watermark="比赛描述"
+                                 Height="100"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 Margin="0,0,0,10"/>
+                        
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <DatePicker Name="ContestDatePicker"
+                                      HorizontalAlignment="Stretch"/>
+                            
+                            <TimePicker Name="ContestTimePicker"
+                                      Grid.Column="2"
+                                      HorizontalAlignment="Stretch"/>
+                        </Grid>
+                        
+                        <NumericUpDown Name="ContestDurationUpDown"
+                                     Minimum="30"
+                                     Maximum="180"
+                                     Value="60"
+                                     Increment="30"
+                                     Watermark="比赛时长（分钟）"
+                                     Margin="0,0,0,15"/>
+                        
+                        <Button Content="创建比赛"
+                                HorizontalAlignment="Center"
+                                Padding="30,15"
+                                Name="CreateContestButton"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 题目管理 -->
+                <Border Background="White"
+                        Margin="0,0,0,20"
+                        CornerRadius="8"
+                        BoxShadow="0 2 10 0 #15000000">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="题目管理"
+                                 FontSize="20"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,15"/>
+                        
+                        <ComboBox Name="DifficultyComboBox"
+                                 HorizontalAlignment="Stretch"
+                                 Margin="0,0,0,10">
+                            <ComboBoxItem Content="简单"/>
+                            <ComboBoxItem Content="中等"/>
+                            <ComboBoxItem Content="困难"/>
+                        </ComboBox>
+                        
+                        <Button Content="生成新题目"
+                                HorizontalAlignment="Center"
+                                Padding="30,15"
+                                Name="GeneratePuzzleButton"
+                                Margin="0,0,0,15"/>
+                        
+                        <TextBlock Text="已生成的题目"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,10"/>
+                        
+                        <ItemsControl Name="PuzzleList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F5F7FA"
+                                            Margin="0,0,0,10"
+                                            Padding="15"
+                                            CornerRadius="4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Difficulty}"/>
+                                                <TextBlock Text="{Binding CreatedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                                         Foreground="Gray"/>
+                                            </StackPanel>
+                                            
+                                            <Button Grid.Column="1"
+                                                    Content="删除"
+                                                    Background="#F56C6C"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- 用户管理 -->
+                <Border Background="White"
+                        CornerRadius="8"
+                        BoxShadow="0 2 10 0 #15000000">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="用户管理"
+                                 FontSize="20"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,15"/>
+                        
+                        <ItemsControl Name="UserList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F5F7FA"
+                                            Margin="0,0,0,10"
+                                            Padding="15"
+                                            CornerRadius="4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Username}"/>
+                                                <TextBlock Text="{Binding Role}"
+                                                         Foreground="Gray"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Column="1"
+                                                      Orientation="Horizontal"
+                                                      Spacing="10">
+                                                <Button Content="修改角色"/>
+                                                <Button Content="删除"
+                                                        Background="#F56C6C"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl> 
