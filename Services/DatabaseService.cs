@@ -655,5 +655,78 @@ namespace SudokuGame.Services
                 return (false, $"创建比赛失败: {ex.Message}", 0);
             }
         }
+
+        // 获取可用的题目列表（用于创建比赛时选择）
+        public List<SudokuPuzzle> GetAvailablePuzzles(string? difficulty = null)
+        {
+            var puzzles = new List<SudokuPuzzle>();
+            string query = @"
+                SELECT * FROM sudoku_puzzles 
+                WHERE (@difficulty IS NULL OR difficulty = @difficulty)
+                ORDER BY created_at DESC";
+
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddWithValue("@difficulty", difficulty ?? (object)DBNull.Value);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        puzzles.Add(new SudokuPuzzle
+                        {
+                            Id = reader.GetInt32("id"),
+                            InitialBoard = reader.GetString("initial_board"),
+                            Solution = reader.GetString("solution"),
+                            Difficulty = reader.GetString("difficulty"),
+                            CreatedAt = reader.GetDateTime("created_at")
+                        });
+                    }
+                }
+            }
+            return puzzles;
+        }
+
+        // 添加题目到比赛中
+        public bool AddPuzzlesToContest(int contestId, List<int> puzzleIds)
+        {
+            try
+            {
+                // 使用事务确保数据一致性
+                using (var transaction = _connection.BeginTransaction())
+                {
+                    try
+                    {
+                        string query = @"
+                            INSERT INTO contest_puzzles (contest_id, puzzle_id, order_index)
+                            VALUES (@contestId, @puzzleId, @orderIndex)";
+
+                        using (var cmd = new MySqlCommand(query, _connection, transaction))
+                        {
+                            for (int i = 0; i < puzzleIds.Count; i++)
+                            {
+                                cmd.Parameters.Clear();
+                                cmd.Parameters.AddWithValue("@contestId", contestId);
+                                cmd.Parameters.AddWithValue("@puzzleId", puzzleIds[i]);
+                                cmd.Parameters.AddWithValue("@orderIndex", i);
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+
+                        transaction.Commit();
+                        return true;
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"添加比赛题目失败: {ex.Message}");
+                return false;
+            }
+        }
     }
 } 

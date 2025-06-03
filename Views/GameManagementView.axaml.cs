@@ -3,6 +3,7 @@ using System;
 using System.Collections.ObjectModel;
 using SudokuGame.Models;
 using SudokuGame.Services;
+using System.Linq;
 
 namespace SudokuGame.Views
 {
@@ -68,16 +69,27 @@ namespace SudokuGame.Views
 
         private void LoadAvailablePuzzles()
         {
-            // TODO: 从数据库加载可选题目列表
+            var difficultyComboBox = this.FindControl<ComboBox>("PuzzleDifficultyComboBox");
+            var selectedItem = difficultyComboBox?.SelectedItem as ComboBoxItem;
+            string? selectedDifficulty = selectedItem?.Content?.ToString();
+
+            // 如果选择了"全部难度"，则传入 null
+            if (selectedDifficulty == "全部难度")
+            {
+                selectedDifficulty = null;
+            }
+
             _availablePuzzles.Clear();
+            var puzzles = _databaseService.GetAvailablePuzzles(selectedDifficulty);
+            foreach (var puzzle in puzzles)
+            {
+                _availablePuzzles.Add(puzzle);
+            }
             UpdateSelectedPuzzlesCount();
         }
 
         private void FilterPuzzlesButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            // TODO: 根据选择的难度筛选题目
-            var difficultyComboBox = this.FindControl<ComboBox>("PuzzleDifficultyComboBox");
-            var selectedDifficulty = ((ComboBoxItem)difficultyComboBox?.SelectedItem!)?.Content?.ToString();
             LoadAvailablePuzzles();
         }
 
@@ -158,6 +170,13 @@ namespace SudokuGame.Views
                 return;
             }
 
+            // 验证是否选择了题目
+            if (_selectedPuzzles.Count == 0)
+            {
+                ShowError("请至少选择一道题目");
+                return;
+            }
+
             // 组合日期和时间
             var startDate = datePicker.SelectedDate.Value;
             var startTime = timePicker.SelectedTime.Value;
@@ -176,13 +195,24 @@ namespace SudokuGame.Views
 
             if (success)
             {
-                ShowSuccess("比赛创建成功");
-                // 清空输入框
-                titleTextBox.Text = "";
-                descriptionTextBox.Text = "";
-                datePicker.SelectedDate = null;
-                timePicker.SelectedTime = null;
-                durationUpDown.Value = 60;
+                // 添加比赛题目
+                var puzzleIds = _selectedPuzzles.Select(p => p.Id).ToList();
+                if (_databaseService.AddPuzzlesToContest(contestId, puzzleIds))
+                {
+                    ShowSuccess("比赛创建成功");
+                    // 清空输入框
+                    titleTextBox.Text = "";
+                    descriptionTextBox.Text = "";
+                    datePicker.SelectedDate = null;
+                    timePicker.SelectedTime = null;
+                    durationUpDown.Value = 60;
+                    // 清空已选题目
+                    ClearPuzzleSelectionButton_Click(null, new Avalonia.Interactivity.RoutedEventArgs());
+                }
+                else
+                {
+                    ShowError("比赛创建成功，但添加题目失败");
+                }
             }
             else
             {

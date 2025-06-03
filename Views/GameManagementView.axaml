@@ -49,104 +49,123 @@
                                 CornerRadius="8"
                                 Margin="0,0,0,15"/>
 
-                        <TextBlock Text="起止时间"
-                                 FontSize="16"
-                                 FontWeight="Bold"
-                                 Margin="0,0,0,10"/>
-
-                        <Grid Margin="0,0,0,15">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="20"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            
-                            <DatePicker Name="ContestDatePicker"
-                                      HorizontalAlignment="Stretch"
-                                      Height="40"
-                                      CornerRadius="8"/>
-                            
-                            <TimePicker Name="ContestTimePicker"
-                                      Grid.Column="2"
-                                      HorizontalAlignment="Stretch"
-                                      Height="40"
-                                      CornerRadius="8"/>
-                        </Grid>
 
-                        <TextBlock Text="比赛时长(分钟)"
-                                 FontSize="16"
-                                 FontWeight="Bold"
-                                 Margin="0,0,0,10" />
-
-                        <NumericUpDown Name="ContestDurationUpDown"
-                                     Minimum="30"
-                                     Maximum="180"
-                                     Value="60"
-                                     Increment="30"
-                                     Height="40"
-                                     Watermark="比赛时长（分钟）"
-                                     Margin="0,0,0,15"/>
-
-                        <!-- 新增：题目选择区域 -->
-                        <Border Background="#F8F9FA"
-                                CornerRadius="8"
-                                Padding="15"
-                                Margin="0,0,0,15">
-                            <StackPanel>
-                                <TextBlock Text="选择比赛题目"
+                            <!-- 左侧：时间设置 -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="开始时间"
+                                         FontSize="16"
                                          FontWeight="Bold"
                                          Margin="0,0,0,10"/>
                                 
+                                <DatePicker Name="ContestDatePicker"
+                                          HorizontalAlignment="Stretch"
+                                          Height="40"
+                                          CornerRadius="8"
+                                          Margin="0,0,0,10"/>
+
+                                <TimePicker Name="ContestTimePicker"
+                                          HorizontalAlignment="Stretch"
+                                          Height="40"
+                                          CornerRadius="8"
+                                          Margin="0,0,0,15"/>
+
+                                <TextBlock Text="比赛时长(分钟)"
+                                         FontSize="16"
+                                         FontWeight="Bold"
+                                         Margin="0,0,0,10"/>
+
+                                <NumericUpDown Name="ContestDurationUpDown"
+                                             Minimum="30"
+                                             Maximum="180"
+                                             Value="60"
+                                             Increment="30"
+                                             Height="40"
+                                             Watermark="比赛时长（分钟）"/>
+                            </StackPanel>
+
+                            <!-- 右侧：题目选择 -->
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="选择比赛题目(ctrl多选)"
+                                         FontSize="16"
+                                         FontWeight="Bold"
+                                         Margin="0,0,0,10"/>
+
                                 <Grid Margin="0,0,0,10">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    
+
                                     <ComboBox Name="PuzzleDifficultyComboBox"
                                             HorizontalAlignment="Stretch"
                                             Height="35"
                                             CornerRadius="6">
                                         <ComboBoxItem Content="全部难度"/>
                                         <ComboBoxItem Content="简单"/>
-                                        <ComboBoxItem Content="中等"/>
+                                        <ComboBoxItem Content="普通"/>
                                         <ComboBoxItem Content="困难"/>
                                     </ComboBox>
-                                    
+
                                     <Button Grid.Column="1"
                                             Content="筛选"
                                             Margin="10,0,0,0"
                                             Height="35"
                                             Name="FilterPuzzlesButton"/>
                                 </Grid>
-                                
+
                                 <ListBox Name="AvailablePuzzlesList"
                                          Height="150"
                                          Background="White"
                                          CornerRadius="6"
-                                         Margin="0,0,0,10"/>
-                                
+                                         SelectionMode="Multiple"
+                                         Margin="0,0,0,10">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Difficulty}"
+                                                             FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding CreatedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                                             Foreground="Gray"
+                                                             FontSize="12"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    
+
                                     <TextBlock Text="已选择题目数：0"
                                              Name="SelectedPuzzlesCount"
                                              VerticalAlignment="Center"/>
-                                    
+
                                     <Button Grid.Column="1"
                                             Content="清空选择"
                                             Name="ClearPuzzleSelectionButton"/>
                                 </Grid>
                             </StackPanel>
-                        </Border>
-                        
+                        </Grid>
+
                         <Button Content="创建比赛"
                                 HorizontalAlignment="Center"
                                 Width="200"
                                 Height="45"
+                                Margin="0,20,0,0"
                                 Name="CreateContestButton"
                                 Background="#4CAF50"
                                 Foreground="White"
@@ -178,7 +197,7 @@
                                      Height="40"
                                      CornerRadius="8">
                                 <ComboBoxItem Content="简单"/>
-                                <ComboBoxItem Content="中等"/>
+                                <ComboBoxItem Content="普通"/>
                                 <ComboBoxItem Content="困难"/>
                             </ComboBox>
                             
