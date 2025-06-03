@@ -10,37 +10,51 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="游戏管理" 
-                 FontSize="24" 
-                 FontWeight="Bold"
-                 HorizontalAlignment="Center"
-                 Margin="0,20,0,20"/>
+        <Border Background="#4CAF50"
+                Height="80">
+            <TextBlock Text="游戏管理" 
+                     FontSize="28" 
+                     FontWeight="Bold"
+                     Foreground="White"
+                     VerticalAlignment="Center"
+                     HorizontalAlignment="Center"/>
+        </Border>
 
-        <ScrollViewer Grid.Row="1">
+        <ScrollViewer Grid.Row="1"
+                      Background="#F5F5F5">
             <StackPanel Margin="20">
                 <!-- 创建比赛 -->
                 <Border Background="White"
                         Margin="0,0,0,20"
-                        CornerRadius="8"
-                        BoxShadow="0 2 10 0 #15000000">
-                    <StackPanel Margin="20">
+                        CornerRadius="12"
+                        BoxShadow="0 4 12 0 #20000000">
+                    <StackPanel Margin="25">
                         <TextBlock Text="创建比赛"
-                                 FontSize="20"
+                                 FontSize="24"
                                  FontWeight="Bold"
-                                 Margin="0,0,0,15"/>
+                                 Foreground="#2E7D32"
+                                 Margin="0,0,0,20"/>
                         
                         <TextBox Name="ContestTitleTextBox"
-                                 Watermark="比赛标题"
-                                 Margin="0,0,0,10"/>
+                                Watermark="比赛标题"
+                                Height="40"
+                                CornerRadius="8"
+                                Margin="0,0,0,15"/>
                         
                         <TextBox Name="ContestDescriptionTextBox"
-                                 Watermark="比赛描述"
-                                 Height="100"
-                                 AcceptsReturn="True"
-                                 TextWrapping="Wrap"
+                                Watermark="比赛描述"
+                                Height="100"
+                                AcceptsReturn="True"
+                                TextWrapping="Wrap"
+                                CornerRadius="8"
+                                Margin="0,0,0,15"/>
+
+                        <TextBlock Text="起止时间"
+                                 FontSize="16"
+                                 FontWeight="Bold"
                                  Margin="0,0,0,10"/>
-                        
-                        <Grid Margin="0,0,0,10">
+
+                        <Grid Margin="0,0,0,15">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="20"/>
@@ -48,64 +62,143 @@
                             </Grid.ColumnDefinitions>
                             
                             <DatePicker Name="ContestDatePicker"
-                                      HorizontalAlignment="Stretch"/>
+                                      HorizontalAlignment="Stretch"
+                                      Height="40"
+                                      CornerRadius="8"/>
                             
                             <TimePicker Name="ContestTimePicker"
                                       Grid.Column="2"
-                                      HorizontalAlignment="Stretch"/>
+                                      HorizontalAlignment="Stretch"
+                                      Height="40"
+                                      CornerRadius="8"/>
                         </Grid>
-                        
+
+                        <TextBlock Text="比赛时长(分钟)"
+                                 FontSize="16"
+                                 FontWeight="Bold"
+                                 Margin="0,0,0,10" />
+
                         <NumericUpDown Name="ContestDurationUpDown"
                                      Minimum="30"
                                      Maximum="180"
                                      Value="60"
                                      Increment="30"
+                                     Height="40"
                                      Watermark="比赛时长（分钟）"
                                      Margin="0,0,0,15"/>
+
+                        <!-- 新增：题目选择区域 -->
+                        <Border Background="#F8F9FA"
+                                CornerRadius="8"
+                                Padding="15"
+                                Margin="0,0,0,15">
+                            <StackPanel>
+                                <TextBlock Text="选择比赛题目"
+                                         FontWeight="Bold"
+                                         Margin="0,0,0,10"/>
+                                
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <ComboBox Name="PuzzleDifficultyComboBox"
+                                            HorizontalAlignment="Stretch"
+                                            Height="35"
+                                            CornerRadius="6">
+                                        <ComboBoxItem Content="全部难度"/>
+                                        <ComboBoxItem Content="简单"/>
+                                        <ComboBoxItem Content="中等"/>
+                                        <ComboBoxItem Content="困难"/>
+                                    </ComboBox>
+                                    
+                                    <Button Grid.Column="1"
+                                            Content="筛选"
+                                            Margin="10,0,0,0"
+                                            Height="35"
+                                            Name="FilterPuzzlesButton"/>
+                                </Grid>
+                                
+                                <ListBox Name="AvailablePuzzlesList"
+                                         Height="150"
+                                         Background="White"
+                                         CornerRadius="6"
+                                         Margin="0,0,0,10"/>
+                                
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <TextBlock Text="已选择题目数：0"
+                                             Name="SelectedPuzzlesCount"
+                                             VerticalAlignment="Center"/>
+                                    
+                                    <Button Grid.Column="1"
+                                            Content="清空选择"
+                                            Name="ClearPuzzleSelectionButton"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
                         
                         <Button Content="创建比赛"
                                 HorizontalAlignment="Center"
-                                Padding="30,15"
-                                Name="CreateContestButton"/>
+                                Width="200"
+                                Height="45"
+                                Name="CreateContestButton"
+                                Background="#4CAF50"
+                                Foreground="White"
+                                FontWeight="Bold"
+                                CornerRadius="22"/>
                     </StackPanel>
                 </Border>
 
                 <!-- 题目管理 -->
                 <Border Background="White"
                         Margin="0,0,0,20"
-                        CornerRadius="8"
-                        BoxShadow="0 2 10 0 #15000000">
-                    <StackPanel Margin="20">
+                        CornerRadius="12"
+                        BoxShadow="0 4 12 0 #20000000">
+                    <StackPanel Margin="25">
                         <TextBlock Text="题目管理"
-                                 FontSize="20"
+                                 FontSize="24"
                                  FontWeight="Bold"
-                                 Margin="0,0,0,15"/>
+                                 Foreground="#1976D2"
+                                 Margin="0,0,0,20"/>
                         
-                        <ComboBox Name="DifficultyComboBox"
-                                 HorizontalAlignment="Stretch"
-                                 Margin="0,0,0,10">
-                            <ComboBoxItem Content="简单"/>
-                            <ComboBoxItem Content="中等"/>
-                            <ComboBoxItem Content="困难"/>
-                        </ComboBox>
-                        
-                        <Button Content="生成新题目"
-                                HorizontalAlignment="Center"
-                                Padding="30,15"
-                                Name="GeneratePuzzleButton"
-                                Margin="0,0,0,15"/>
-                        
-                        <TextBlock Text="已生成的题目"
-                                 FontWeight="Bold"
-                                 Margin="0,0,0,10"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <ComboBox Name="DifficultyComboBox"
+                                     HorizontalAlignment="Stretch"
+                                     Height="40"
+                                     CornerRadius="8">
+                                <ComboBoxItem Content="简单"/>
+                                <ComboBoxItem Content="中等"/>
+                                <ComboBoxItem Content="困难"/>
+                            </ComboBox>
+                            
+                            <Button Grid.Column="1"
+                                    Content="生成新题目"
+                                    Height="40"
+                                    Margin="10,0,0,0"
+                                    Name="GeneratePuzzleButton"
+                                    Background="#1976D2"
+                                    Foreground="White"
+                                    CornerRadius="8"/>
+                        </Grid>
                         
                         <ItemsControl Name="PuzzleList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#F5F7FA"
+                                    <Border Background="#F8F9FA"
                                             Margin="0,0,0,10"
                                             Padding="15"
-                                            CornerRadius="4">
+                                            CornerRadius="8">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -113,14 +206,18 @@
                                             </Grid.ColumnDefinitions>
                                             
                                             <StackPanel>
-                                                <TextBlock Text="{Binding Difficulty}"/>
+                                                <TextBlock Text="{Binding Difficulty}"
+                                                         FontWeight="SemiBold"/>
                                                 <TextBlock Text="{Binding CreatedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
-                                                         Foreground="Gray"/>
+                                                         Foreground="Gray"
+                                                         FontSize="12"/>
                                             </StackPanel>
                                             
                                             <Button Grid.Column="1"
                                                     Content="删除"
-                                                    Background="#F56C6C"/>
+                                                    Background="#F44336"
+                                                    Foreground="White"
+                                                    CornerRadius="4"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -131,21 +228,22 @@
 
                 <!-- 用户管理 -->
                 <Border Background="White"
-                        CornerRadius="8"
-                        BoxShadow="0 2 10 0 #15000000">
-                    <StackPanel Margin="20">
+                        CornerRadius="12"
+                        BoxShadow="0 4 12 0 #20000000">
+                    <StackPanel Margin="25">
                         <TextBlock Text="用户管理"
-                                 FontSize="20"
+                                 FontSize="24"
                                  FontWeight="Bold"
-                                 Margin="0,0,0,15"/>
+                                 Foreground="#7B1FA2"
+                                 Margin="0,0,0,20"/>
                         
                         <ItemsControl Name="UserList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#F5F7FA"
+                                    <Border Background="#F8F9FA"
                                             Margin="0,0,0,10"
                                             Padding="15"
-                                            CornerRadius="4">
+                                            CornerRadius="8">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -153,17 +251,24 @@
                                             </Grid.ColumnDefinitions>
                                             
                                             <StackPanel>
-                                                <TextBlock Text="{Binding Username}"/>
+                                                <TextBlock Text="{Binding Username}"
+                                                         FontWeight="SemiBold"/>
                                                 <TextBlock Text="{Binding Role}"
-                                                         Foreground="Gray"/>
+                                                         Foreground="Gray"
+                                                         FontSize="12"/>
                                             </StackPanel>
                                             
                                             <StackPanel Grid.Column="1"
                                                       Orientation="Horizontal"
                                                       Spacing="10">
-                                                <Button Content="修改角色"/>
+                                                <Button Content="修改角色"
+                                                        Background="#7B1FA2"
+                                                        Foreground="White"
+                                                        CornerRadius="4"/>
                                                 <Button Content="删除"
-                                                        Background="#F56C6C"/>
+                                                        Background="#F44336"
+                                                        Foreground="White"
+                                                        CornerRadius="4"/>
                                             </StackPanel>
                                         </Grid>
                                     </Border>

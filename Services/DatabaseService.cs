@@ -630,5 +630,30 @@ namespace SudokuGame.Services
                 return false;
             }
         }
+
+        public (bool success, string message, int contestId) AddContest(string title, string description, DateTime startTime, int duration)
+        {
+            try
+            {
+                string query = @"
+                    INSERT INTO contests (title, description, start_time, duration, status)
+                    VALUES (@title, @description, @startTime, @duration, 'pending');
+                    SELECT LAST_INSERT_ID();";
+
+                using (var cmd = new MySqlCommand(query, _connection))
+                {
+                    cmd.Parameters.AddWithValue("@title", title);
+                    cmd.Parameters.AddWithValue("@description", description);
+                    cmd.Parameters.AddWithValue("@startTime", startTime);
+                    cmd.Parameters.AddWithValue("@duration", duration);
+                    int contestId = Convert.ToInt32(cmd.ExecuteScalar());
+                    return (true, "比赛创建成功", contestId);
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, $"创建比赛失败: {ex.Message}", 0);
+            }
+        }
     }
 } 
