@@ -4,6 +4,7 @@ using System.Data;
 using System.Collections.Generic;
 using BCrypt.Net;
 using SudokuGame.Models;
+using System.Threading.Tasks;
 
 namespace SudokuGame.Services
 {
@@ -14,7 +15,7 @@ namespace SudokuGame.Services
 
         public DatabaseService()
         {
-            _connectionString = "Server=localhost;Uid=root;Pwd=123456;Allow User Variables=True;";
+            _connectionString = "Server=localhost;Uid=root;Pwd=20234108@123;Allow User Variables=True;";
             _connection = new MySqlConnection(_connectionString);
             InitializeDatabase();
         }
@@ -444,7 +445,7 @@ namespace SudokuGame.Services
         }
 
         // 获取比赛题目列表
-        public List<SudokuPuzzle> GetContestPuzzles(int contestId)
+        public async Task<List<SudokuPuzzle>> GetContestPuzzles(int contestId)
         {
             var puzzles = new List<SudokuPuzzle>();
             string query = @"
@@ -457,9 +458,9 @@ namespace SudokuGame.Services
             using (var cmd = new MySqlCommand(query, _connection))
             {
                 cmd.Parameters.AddWithValue("@contestId", contestId);
-                using (var reader = cmd.ExecuteReader())
+                using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    while (reader.Read())
+                    while (await reader.ReadAsync())
                     {
                         puzzles.Add(new SudokuPuzzle
                         {

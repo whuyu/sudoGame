@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SudokuGame.Models;
 using SudokuGame.Services;
+using System.Diagnostics;
 
 namespace SudokuGame.Views
 {
@@ -21,39 +22,72 @@ namespace SudokuGame.Views
 
         public ContestView(int contestId, int userId)
         {
-            InitializeComponent();
-            _contestId = contestId;
-            _userId = userId;
-            _databaseService = new DatabaseService();
+            try
+            {
+                InitializeComponent();
+                _contestId = contestId;
+                _userId = userId;
+                _databaseService = new DatabaseService();
 
-            LoadContest();
-            SetupTimer();
-            LoadPuzzles();
-            LoadLeaderboard();
+                Debug.WriteLine($"初始化比赛视图 - 比赛ID: {contestId}, 用户ID: {userId}");
+
+                LoadContest();
+                SetupTimer();
+                LoadPuzzles();
+                LoadLeaderboard();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"比赛视图初始化失败: {ex.Message}");
+                Debug.WriteLine($"异常堆栈: {ex.StackTrace}");
+                throw;
+            }
         }
 
         private void LoadContest()
         {
-            _contest = _databaseService.GetContest(_contestId);
-            if (_contest != null)
+            try
             {
-                var titleBlock = this.FindControl<TextBlock>("ContestTitle");
-                var descBlock = this.FindControl<TextBlock>("ContestDescription");
-                if (titleBlock != null) titleBlock.Text = _contest.Title;
-                if (descBlock != null) descBlock.Text = _contest.Description;
+                _contest = _databaseService.GetContest(_contestId);
+                if (_contest != null)
+                {
+                    var titleBlock = this.FindControl<TextBlock>("ContestTitle");
+                    var descBlock = this.FindControl<TextBlock>("ContestDescription");
+                    if (titleBlock != null) titleBlock.Text = _contest.Title;
+                    if (descBlock != null) descBlock.Text = _contest.Description;
 
-                _endTime = _contest.StartTime.AddMinutes(_contest.Duration);
+                    _endTime = _contest.StartTime.AddMinutes(_contest.Duration);
+                    Debug.WriteLine($"比赛信息加载成功 - 标题: {_contest.Title}");
+                }
+                else
+                {
+                    Debug.WriteLine($"未找到比赛信息 - 比赛ID: {_contestId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"加载比赛信息失败: {ex.Message}");
+                throw;
             }
         }
 
         private void SetupTimer()
         {
-            _timer = new DispatcherTimer
+            try
             {
-                Interval = TimeSpan.FromSeconds(1)
-            };
-            _timer.Tick += Timer_Tick;
-            _timer.Start();
+                _timer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromSeconds(1)
+                };
+                _timer.Tick += Timer_Tick;
+                _timer.Start();
+                Debug.WriteLine("计时器设置成功");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"设置计时器失败: {ex.Message}");
+                throw;
+            }
         }
 
         private void Timer_Tick(object sender, EventArgs e)
@@ -74,51 +108,116 @@ namespace SudokuGame.Views
             }
         }
 
-        private void LoadPuzzles()
+        private async void LoadPuzzles()
         {
-            var puzzles = _databaseService.GetContestPuzzles(_contestId);
-            var puzzleList = this.FindControl<ItemsControl>("PuzzleList");
-            if (puzzleList != null)
+            try
             {
-                var puzzleItems = puzzles.Select((p, i) => new
+                Debug.WriteLine("开始加载比赛题目...");
+                var puzzles = await _databaseService.GetContestPuzzles(_contestId);
+                Debug.WriteLine($"获取到 {puzzles.Count} 个题目");
+
+                var puzzleItems = puzzles.Select((puzzle, index) => new PuzzleItem
                 {
-                    Title = $"题目 {i + 1}",
-                    Status = p.IsCompleted ? "已完成" : "未完成",
-                    Puzzle = p
+                    Title = $"题目 {index + 1}",
+                    Status = "未完成",
+                    Puzzle = puzzle,
+                    Index = index
                 }).ToList();
 
-                puzzleList.ItemsSource = puzzleItems;
+                var puzzleList = this.FindControl<ItemsControl>("PuzzleList");
+                if (puzzleList != null)
+                {
+                    puzzleList.ItemsSource = puzzleItems;
+                    Debug.WriteLine("题目列表更新成功");
+                }
+                else
+                {
+                    Debug.WriteLine("未找到题目列表控件");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"加载题目失败: {ex.Message}");
+                Debug.WriteLine($"异常堆栈: {ex.StackTrace}");
             }
         }
 
         private void LoadLeaderboard()
         {
-            var participants = _databaseService.GetContestLeaderboard(_contestId);
-            var leaderboardList = this.FindControl<ItemsControl>("LeaderboardList");
-            if (leaderboardList != null)
+            try
             {
-                leaderboardList.ItemsSource = participants.Select((p, i) => new
+                Debug.WriteLine("开始加载排行榜...");
+                var participants = _databaseService.GetContestLeaderboard(_contestId);
+                Debug.WriteLine($"获取到 {participants.Count} 个参赛者");
+
+                var leaderboardList = this.FindControl<ItemsControl>("LeaderboardList");
+                if (leaderboardList != null)
                 {
-                    Rank = i + 1,
-                    p.Username,
-                    p.CompletedPuzzles,
-                    p.TotalTime
-                });
+                    var leaderboardData = participants.Select((p, i) => new
+                    {
+                        Rank = i + 1,
+                        p.Username,
+                        p.CompletedPuzzles,
+                        p.TotalTime
+                    }).ToList();
+
+                    Debug.WriteLine($"排行榜数据: {string.Join(", ", leaderboardData.Select(d => $"排名:{d.Rank} 用户:{d.Username} 完成:{d.CompletedPuzzles} 用时:{d.TotalTime}"))}");
+                    
+                    leaderboardList.ItemsSource = leaderboardData;
+                    Debug.WriteLine($"排行榜更新成功 - 显示 {leaderboardData.Count} 条记录");
+                }
+                else
+                {
+                    Debug.WriteLine("未找到排行榜控件");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"加载排行榜失败: {ex.Message}");
+                Debug.WriteLine($"异常堆栈: {ex.StackTrace}");
             }
         }
 
-        private async void Puzzle_Click(object sender, RoutedEventArgs e)
+        private void Puzzle_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.DataContext is SudokuPuzzle puzzle)
+            Debug.WriteLine("Puzzle_Click 被触发");
+            
+            if (sender is Button button)
             {
-                var mainWindow = this.FindAncestorOfType<MainWindow>();
-                if (mainWindow != null)
+                Debug.WriteLine($"按钮的 DataContext 类型: {button.DataContext?.GetType().Name}");
+                
+                if (button.DataContext is PuzzleItem puzzleItem)
                 {
-                    var gameView = new GameView(_userId);
-                    gameView.LoadPuzzle(puzzle);
-                    mainWindow.Content = gameView;
+                    Debug.WriteLine($"题目索引: {puzzleItem.Index}");
+                    Debug.WriteLine($"题目标题: {puzzleItem.Title}");
+                    
+                    if (puzzleItem.Puzzle != null)
+                    {
+                        var window = new ContestPuzzleWindow(_contestId, _userId, puzzleItem.Index, puzzleItem.Puzzle);
+                        window.Show();
+                    }
+                    else
+                    {
+                        Debug.WriteLine("题目数据为空");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("DataContext 不是 PuzzleItem 类型");
                 }
             }
+            else
+            {
+                Debug.WriteLine("发送者不是按钮");
+            }
+        }
+
+        private class PuzzleItem
+        {
+            public string Title { get; set; } = "";
+            public string Status { get; set; } = "";
+            public SudokuPuzzle Puzzle { get; set; } = null!;
+            public int Index { get; set; }
         }
 
         private void BackToList_Click(object sender, RoutedEventArgs e)

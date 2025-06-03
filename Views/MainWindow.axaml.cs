@@ -900,17 +900,29 @@ namespace SudokuGame.Views
         // 添加新方法用于设置内容
         public void SetContent(UserControl content)
         {
-            // 清除其他视图
-            var viewsToRemove = contentArea.Children.Where(c => c != gamePanel).ToList();
-            foreach (var view in viewsToRemove)
+            try
             {
-                contentArea.Children.Remove(view);
-            }
+                Debug.WriteLine("开始设置内容...");
+                
+                // 清除其他视图
+                var viewsToRemove = contentArea.Children.Where(c => c != gamePanel).ToList();
+                foreach (var view in viewsToRemove)
+                {
+                    contentArea.Children.Remove(view);
+                }
 
-            // 添加新内容
-            Grid.SetRow(content, 0);
-            Grid.SetRowSpan(content, 4);
-            contentArea.Children.Add(content);
+                // 添加新内容
+                Grid.SetRow(content, 0);
+                Grid.SetRowSpan(content, 4);
+                contentArea.Children.Add(content);
+                
+                Debug.WriteLine("内容设置完成");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"设置内容时出错: {ex.Message}");
+                Debug.WriteLine($"异常堆栈: {ex.StackTrace}");
+            }
         }
 
         private void InitializeNavigation()

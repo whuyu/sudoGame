@@ -1,0 +1,77 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+        x:Class="SudokuGame.Views.ContestPuzzleWindow"
+        Title="比赛题目"
+        WindowStartupLocation="CenterScreen"
+        Width="800" Height="600">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题和计时器 -->
+        <Grid Grid.Row="0" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock x:Name="PuzzleTitle"
+                     Text="题目"
+                     FontSize="24"
+                     FontWeight="Bold"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20">
+                <TextBlock Text="用时："/>
+                <TextBlock x:Name="TimerDisplay"
+                         Text="00:00:000"
+                         FontSize="18"
+                         FontWeight="Bold"
+                         Foreground="#409EFF"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 数独棋盘 -->
+        <Border Grid.Row="1"
+                Width="540" 
+                Height="540"
+                Background="White"
+                BorderBrush="Black"
+                BorderThickness="2"
+                Padding="0"
+                Margin="20"
+                HorizontalAlignment="Center"
+                BoxShadow="0 2 10 0 #15000000">
+            <Grid x:Name="SudokuGrid" 
+                  Margin="0">
+                <!-- 网格将在代码中动态生成 -->
+            </Grid>
+        </Border>
+
+        <!-- 控制按钮 -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,20"
+                    Spacing="20">
+            <Button Content="清空" 
+                    Width="100" 
+                    Height="35"
+                    Name="ClearButton"/>
+            <Button Content="检查" 
+                    Width="100" 
+                    Height="35"
+                    Name="CheckButton"/>
+            <Button Content="提交" 
+                    Width="100" 
+                    Height="35"
+                    Name="SubmitButton"/>
+        </StackPanel>
+    </Grid>
+</Window> 
