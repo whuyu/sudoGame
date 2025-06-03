@@ -22,22 +22,7 @@
             <Setter Property="Background" Value="#67C23A"/>
         </Style>
         
-        <!-- 添加TextBox的全局样式 -->
-        <Style Selector="TextBox">
-            <Setter Property="CornerRadius" Value="0"/>
-            <Setter Property="BorderBrush" Value="#333333"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="CaretBrush" Value="#409EFF"/>
-            <Setter Property="SelectionBrush" Value="#409EFF"/>
-            <Setter Property="SelectionForegroundBrush" Value="White"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Margin" Value="0"/>
-        </Style>
-        <!-- 确保TextBox在只读状态下也保持边框样式 -->
-        <Style Selector="TextBox:readonly">
-            <Setter Property="BorderBrush" Value="#333333"/>
-            <Setter Property="CornerRadius" Value="0"/>
-        </Style>
+        
     </Window.Styles>
 
     <Grid>
@@ -104,38 +89,27 @@
                          Margin="0,20,0,20"/>
 
                 <!-- 数独网格 -->
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                
 
-                    <!-- 数独棋盘 -->
-                    <Border Grid.Column="1"
-                            Width="540" 
-                            Height="540"
-                            Background="White"
-                            BorderBrush="Black"
-                            BorderThickness="2"
-                            Padding="0"
-                            Margin="0"
-                            BoxShadow="0 2 10 0 #15000000">
-                        <Grid x:Name="SudokuGrid" 
-                              Margin="0">
-                            <!-- 网格将在代码中动态生成 -->
-                        </Grid>
-                    </Border>
+                <!-- 数独棋盘 -->
+                <Border Grid.Row="1"
+                        Grid.Column="1"
+                        Width="540" 
+                        Height="540"
+                        Background="White"
+                        BorderBrush="Black"
+                        BorderThickness="2"
+                        Padding="0"
+                        Margin="0"
+                        BoxShadow="0 2 10 0 #15000000">
+                    <Grid x:Name="SudokuGrid" 
+                            Margin="0">
+                        <!-- 网格将在代码中动态生成 -->
+                    </Grid>
+                </Border>
 
-                    <!-- 右侧按钮 -->
-                    <StackPanel Grid.Column="2" 
-                                Margin="20,0,0,0"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Left"
-                                Spacing="10">
-                        <!-- 移除 StepCheckButton -->
-                    </StackPanel>
-                </Grid>
+                    
+
 
                 <!-- 计时器 -->
                 <Border Grid.Row="2" 

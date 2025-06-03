@@ -98,31 +98,66 @@
                              Margin="20,20,20,10"/>
 
                     <ScrollViewer Grid.Row="1">
-                        <ItemsControl x:Name="LeaderboardList">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="20,10">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <!-- 列标题 -->
+                            <Grid Margin="20,10" Background="#F5F7FA">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                                        <TextBlock Text="{Binding Rank}"
-                                                 FontWeight="Bold"
-                                                 Margin="0,0,20,0"/>
-                                        <TextBlock Grid.Column="1"
-                                                 Text="{Binding Username}"/>
-                                        <TextBlock Grid.Column="2"
-                                                 Text="{Binding CompletedPuzzles}"
-                                                 Margin="20,0"/>
-                                        <TextBlock Grid.Column="3"
-                                                 Text="{Binding TotalTime, StringFormat='{}{0}秒'}"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                <TextBlock Text="排名"
+                                         FontWeight="Bold"
+                                         Margin="0,0,20,0"/>
+                                <TextBlock Grid.Column="1"
+                                         Text="用户名"
+                                         FontWeight="Bold"/>
+                                <TextBlock Grid.Column="2"
+                                         Text="完成题数"
+                                         FontWeight="Bold"
+                                         Margin="20,0"/>
+                                <TextBlock Grid.Column="3"
+                                         Text="用时"
+                                         FontWeight="Bold"
+                                         Margin="0,0,20,0"/>
+                                <TextBlock Grid.Column="4"
+                                         Text="加入时间"
+                                         FontWeight="Bold"/>
+                            </Grid>
+
+                            <ItemsControl x:Name="LeaderboardList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="20,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Text="{Binding Rank}"
+                                                     FontWeight="Bold"
+                                                     Margin="0,0,20,0"/>
+                                            <TextBlock Grid.Column="1"
+                                                     Text="{Binding Username}"/>
+                                            <TextBlock Grid.Column="2"
+                                                     Text="{Binding CompletedPuzzles}"
+                                                     Margin="20,0"/>
+                                            <TextBlock Grid.Column="3"
+                                                     Text="{Binding TotalTimeStr}"
+                                                     Margin="0,0,20,0"/>
+                                            <TextBlock Grid.Column="4"
+                                                     Text="{Binding JoinTimeStr}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
                     </ScrollViewer>
                 </Grid>
             </Border>

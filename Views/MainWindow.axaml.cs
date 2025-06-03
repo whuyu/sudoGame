@@ -224,11 +224,7 @@ namespace SudokuGame.Views
             try
             {
                 var sudokuGrid = this.FindControl<Grid>("SudokuGrid");
-                if (sudokuGrid == null)
-                {
-                    Debug.WriteLine("找不到SudokuGrid");
-                    return;
-                }
+                if (sudokuGrid == null) return;
 
                 sudokuGrid.RowDefinitions.Clear();
                 sudokuGrid.ColumnDefinitions.Clear();
@@ -263,13 +259,12 @@ namespace SudokuGame.Views
                                 j == 8 ? 3 : (j % 3 == 2 ? 3 : 1),  // 右边框：3x3格子的结束处加粗
                                 i == 8 ? 3 : (i % 3 == 2 ? 3 : 1)   // 下边框：3x3格子的结束处加粗
                             ),
-                            BorderBrush = new SolidColorBrush(Color.FromRgb(51, 51, 51))  // 使用深灰色边框 #333333
+                            BorderBrush = new SolidColorBrush(Color.FromRgb(51, 51, 51))
                         };
 
                         // 设置输入验证
                         cell.TextInput += (s, e) =>
                         {
-                            // 只允许输入1-9的数字
                             if (e.Text.Length == 1 && (e.Text[0] < '1' || e.Text[0] > '9'))
                             {
                                 e.Handled = true;
@@ -314,7 +309,7 @@ namespace SudokuGame.Views
                         {
                             if (!cell.IsReadOnly)
                             {
-                                cell.Foreground = new SolidColorBrush(Color.FromRgb(64, 158, 255)); // 蓝色 #409EFF
+                                cell.Foreground = new SolidColorBrush(Color.FromRgb(64, 158, 255));
                             }
                         };
 
@@ -328,13 +323,12 @@ namespace SudokuGame.Views
                 gameStopwatch.Start();
                 displayTimer.Interval = TimeSpan.FromMilliseconds(10);
                 displayTimer.Tick += DisplayTimer_Tick;
-
-                // GenerateNewGame() 将在构造函数异步块的 SetupGame() 后调用
-                // DisplayPuzzle() 将在 GenerateNewGame() 中调用，负责设置初始状态和颜色
+                displayTimer.Start();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"设置游戏错误: {ex.Message}");
+                Debug.WriteLine($"设置游戏时出错: {ex.Message}");
+                Debug.WriteLine($"异常堆栈: {ex.StackTrace}");
             }
         }
 
@@ -363,16 +357,7 @@ namespace SudokuGame.Views
                         cells[i, j].Foreground = new SolidColorBrush(Color.FromRgb(64, 158, 255)); // #409EFF
                     }
 
-                     // 统一设置单元格边框
-                    cells[i, j].BorderThickness = new Thickness(
-                        j % 3 == 0 ? 3 : 1,  // 左边框：3x3格子的开始处加粗
-                        i % 3 == 0 ? 3 : 1,  // 上边框：3x3格子的开始处加粗
-                        j == 8 ? 3 : (j % 3 == 2 ? 3 : 1),  // 右边框：3x3格子的结束处加粗
-                        i == 8 ? 3 : (i % 3 == 2 ? 3 : 1)   // 下边框：3x3格子的结束处加粗
-                    );
-                    cells[i, j].BorderBrush = new SolidColorBrush(Color.FromRgb(51, 51, 51));
-
-                    // 设置单元格背景和文字颜色
+                    
                 }
             }
         }
@@ -396,6 +381,7 @@ namespace SudokuGame.Views
             // 显示选中的内容
             switch (selectedContent)
             {
+                
                 case "随机一题":
                     gamePanel.IsVisible = true;
                     if (!_isLoadingExistingPuzzle)
@@ -1018,6 +1004,160 @@ namespace SudokuGame.Views
                 };
                 await messageWindow.ShowDialog(this);
             }
+        }
+
+        private void LoadLeaderboard()
+        {
+            // 创建排行榜视图
+            var leaderboardGrid = new Grid
+            {
+                RowDefinitions =
+                {
+                    new RowDefinition { Height = GridLength.Auto },
+                    new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
+                },
+                Margin = new Thickness(20)
+            };
+
+            // 添加标题
+            var titleBlock = new TextBlock
+            {
+                Text = "参赛者排行榜",
+                FontSize = 24,
+                FontWeight = FontWeight.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 20, 0, 20)
+            };
+            Grid.SetRow(titleBlock, 0);
+            leaderboardGrid.Children.Add(titleBlock);
+
+            // 创建排行榜内容面板
+            var contentBorder = new Border
+            {
+                Background = Brushes.White,
+                CornerRadius = new CornerRadius(8),
+                BoxShadow = new BoxShadows(new BoxShadow { OffsetX = 0, OffsetY = 2, Blur = 10, Color = Color.FromArgb(21, 0, 0, 0) }),
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+            Grid.SetRow(contentBorder, 1);
+
+            var scrollViewer = new ScrollViewer();
+            var stackPanel = new StackPanel();
+
+            // 添加表头
+            var headerGrid = new Grid
+            {
+                Margin = new Thickness(20, 10),
+                Background = new SolidColorBrush(Color.FromRgb(245, 247, 250))
+            };
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var headers = new[] { "排名", "ID", "用户名", "参赛时间", "状态" };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var header = new TextBlock
+                {
+                    Text = headers[i],
+                    FontWeight = FontWeight.Bold,
+                    Margin = new Thickness(i == 0 ? 0 : 20, 0, 0, 0)
+                };
+                Grid.SetColumn(header, i);
+                headerGrid.Children.Add(header);
+            }
+            stackPanel.Children.Add(headerGrid);
+
+            // 获取所有比赛的参赛者
+            var contests = _databaseService.GetContests();
+            var allParticipants = new List<(ContestParticipant participant, string contestTitle)>();
+
+            foreach (var contest in contests)
+            {
+                var participants = _databaseService.GetContestLeaderboard(contest.Id);
+                foreach (var participant in participants)
+                {
+                    allParticipants.Add((participant, contest.Title));
+                }
+            }
+
+            // 按参赛时间排序
+            var sortedParticipants = allParticipants
+                .OrderByDescending(p => p.participant.JoinTime)
+                .ToList();
+
+            // 添加参赛者数据
+            for (int i = 0; i < sortedParticipants.Count; i++)
+            {
+                var (participant, contestTitle) = sortedParticipants[i];
+                var itemGrid = new Grid
+                {
+                    Margin = new Thickness(20, 10)
+                };
+                itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                itemGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                // 排名
+                var rankBlock = new TextBlock
+                {
+                    Text = (i + 1).ToString(),
+                    FontWeight = FontWeight.Bold,
+                    Margin = new Thickness(0, 0, 20, 0)
+                };
+                Grid.SetColumn(rankBlock, 0);
+                itemGrid.Children.Add(rankBlock);
+
+                // 用户ID
+                var idBlock = new TextBlock
+                {
+                    Text = participant.UserId.ToString(),
+                    Margin = new Thickness(0, 0, 20, 0)
+                };
+                Grid.SetColumn(idBlock, 1);
+                itemGrid.Children.Add(idBlock);
+
+                // 用户名
+                var usernameBlock = new TextBlock
+                {
+                    Text = participant.Username
+                };
+                Grid.SetColumn(usernameBlock, 2);
+                itemGrid.Children.Add(usernameBlock);
+
+                // 参赛时间
+                var joinTimeBlock = new TextBlock
+                {
+                    Text = participant.JoinTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                    Margin = new Thickness(20, 0)
+                };
+                Grid.SetColumn(joinTimeBlock, 3);
+                itemGrid.Children.Add(joinTimeBlock);
+
+                // 状态（比赛标题）
+                var statusBlock = new TextBlock
+                {
+                    Text = contestTitle,
+                    Foreground = new SolidColorBrush(Color.FromRgb(64, 158, 255))
+                };
+                Grid.SetColumn(statusBlock, 4);
+                itemGrid.Children.Add(statusBlock);
+
+                stackPanel.Children.Add(itemGrid);
+            }
+
+            scrollViewer.Content = stackPanel;
+            contentBorder.Child = scrollViewer;
+            leaderboardGrid.Children.Add(contentBorder);
+
+            // 添加到主内容区域
+            Grid.SetRow(leaderboardGrid, 0);
+            Grid.SetRowSpan(leaderboardGrid, 4);
+            contentArea.Children.Add(leaderboardGrid);
         }
     }
 } 

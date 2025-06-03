@@ -15,7 +15,7 @@ namespace SudokuGame.Services
 
         public DatabaseService()
         {
-            _connectionString = "Server=localhost;Uid=root;Pwd=20234108@123;Allow User Variables=True;";
+            _connectionString = "Server=localhost;Uid=root;Pwd=123456;Allow User Variables=True;";
             _connection = new MySqlConnection(_connectionString);
             InitializeDatabase();
         }
@@ -496,17 +496,10 @@ namespace SudokuGame.Services
                 {
                     return (false, "比赛已结束");
                 }
-
-                if (DateTime.Now < contest.StartTime)
-                {
-                    return (false, "比赛还未开始");
-                }
-
                 if (DateTime.Now > contest.StartTime.AddMinutes(contest.Duration))
                 {
                     return (false, "比赛已结束");
                 }
-
                 // 检查是否已经加入
                 string checkQuery = @"
                     SELECT COUNT(*) FROM contest_participants 

@@ -106,6 +106,12 @@ namespace SudokuGame.Views
             {
                 timeBlock.Text = $"剩余时间：{remaining.Hours:D2}:{remaining.Minutes:D2}:{remaining.Seconds:D2}";
             }
+
+            // 每秒刷新一次排行榜
+            if (DateTime.Now.Second % 1 == 0)
+            {
+                LoadLeaderboard();
+            }
         }
 
         private async void LoadPuzzles()
@@ -153,15 +159,21 @@ namespace SudokuGame.Views
                 var leaderboardList = this.FindControl<ItemsControl>("LeaderboardList");
                 if (leaderboardList != null)
                 {
-                    var leaderboardData = participants.Select((p, i) => new
-                    {
-                        Rank = i + 1,
-                        p.Username,
-                        p.CompletedPuzzles,
-                        p.TotalTime
-                    }).ToList();
+                    var leaderboardData = participants
+                        .OrderByDescending(x => x.CompletedPuzzles)
+                        .ThenBy(x => x.TotalTime)
+                        .Select((p, i) => new
+                        {
+                            Rank = i + 1,
+                            p.Username,
+                            p.CompletedPuzzles,
+                            TotalTimeStr = TimeSpan.FromSeconds(p.TotalTime).ToString(@"hh\:mm\:ss"),
+                            p.TotalTime,
+                            JoinTimeStr = p.JoinTime.ToString("MM-dd HH:mm")
+                        })
+                        .ToList();
 
-                    Debug.WriteLine($"排行榜数据: {string.Join(", ", leaderboardData.Select(d => $"排名:{d.Rank} 用户:{d.Username} 完成:{d.CompletedPuzzles} 用时:{d.TotalTime}"))}");
+                    Debug.WriteLine($"排行榜数据: {string.Join(", ", leaderboardData.Select(d => $"排名:{d.Rank} 用户:{d.Username} 完成:{d.CompletedPuzzles} 用时:{d.TotalTimeStr} 加入时间:{d.JoinTimeStr}"))}");
                     
                     leaderboardList.ItemsSource = leaderboardData;
                     Debug.WriteLine($"排行榜更新成功 - 显示 {leaderboardData.Count} 条记录");
