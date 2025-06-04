@@ -5,6 +5,9 @@ using SudokuGame.Models;
 using SudokuGame.Services;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Media;
+using Avalonia;
+using Avalonia.Layout;
 
 namespace SudokuGame.Views
 {
@@ -17,6 +20,7 @@ namespace SudokuGame.Views
         private readonly ObservableCollection<SudokuPuzzle> _availablePuzzles;
         private readonly ObservableCollection<SudokuPuzzle> _selectedPuzzles;
         private bool _isLoading = false;
+        private TextBlock _messageText;
 
         public GameManagementView(int userId)
         {
@@ -27,6 +31,23 @@ namespace SudokuGame.Views
             _users = new ObservableCollection<User>();
             _availablePuzzles = new ObservableCollection<SudokuPuzzle>();
             _selectedPuzzles = new ObservableCollection<SudokuPuzzle>();
+
+            // 初始化消息文本块
+            _messageText = this.FindControl<TextBlock>("MessageText");
+            if (_messageText == null)
+            {
+                _messageText = new TextBlock
+                {
+                    Margin = new Thickness(10),
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+                };
+                var mainGrid = this.FindControl<Grid>("MainGrid");
+                if (mainGrid != null)
+                {
+                    Grid.SetRow(_messageText, 1);
+                    mainGrid.Children.Add(_messageText);
+                }
+            }
 
             // 设置数据源
             var puzzleList = this.FindControl<ItemsControl>("PuzzleList");
@@ -237,7 +258,7 @@ namespace SudokuGame.Views
                 var puzzleIds = _selectedPuzzles.Select(p => p.Id).ToList();
                 if (_databaseService.AddPuzzlesToContest(contestId, puzzleIds))
                 {
-                    ShowSuccess("比赛创建成功");
+                    ShowSuccess("比赛创建成功!");
                     // 清空输入框
                     titleTextBox.Text = "";
                     descriptionTextBox.Text = "";
@@ -260,14 +281,20 @@ namespace SudokuGame.Views
 
         private void ShowError(string message)
         {
-            // TODO: 实现错误提示，可以使用对话框或其他UI元素
-            Console.WriteLine($"Error: {message}");
+            if (_messageText != null)
+            {
+                _messageText.Text = message;
+                _messageText.Foreground = Brushes.Red;
+            }
         }
 
         private void ShowSuccess(string message)
         {
-            // TODO: 实现成功提示，可以使用对话框或其他UI元素
-            Console.WriteLine($"Success: {message}");
+            if (_messageText != null)
+            {
+                _messageText.Text = message;
+                _messageText.Foreground = Brushes.Green;
+            }
         }
 
         private async void GeneratePuzzleButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)

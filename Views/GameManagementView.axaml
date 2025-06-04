@@ -23,6 +23,13 @@
         <ScrollViewer Grid.Row="1"
                       Background="#F5F5F5">
             <StackPanel Margin="20">
+                <!-- 消息提示 -->
+                <TextBlock Name="MessageText"
+                         FontSize="16"
+                         Margin="0,0,0,15"
+                         TextWrapping="Wrap"
+                         HorizontalAlignment="Center"/>
+                
                 <!-- 创建比赛 -->
                 <Border Background="White"
                         Margin="0,0,0,20"
