@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using BCrypt.Net;
 using SudokuGame.Models;
 using System.Threading.Tasks;
+using System.Linq;
 using System.Diagnostics;
 
 namespace SudokuGame.Services
@@ -16,7 +17,7 @@ namespace SudokuGame.Services
 
         public DatabaseService()
         {
-            _connectionString = "Server=localhost;Uid=root;Pwd=123456;Allow User Variables=True;";
+            _connectionString = "Server=localhost;Uid=root;Pwd=20234108@123;Allow User Variables=True;";
             _connection = new MySqlConnection(_connectionString);
             InitializeDatabase();
         }
@@ -93,6 +94,30 @@ namespace SudokuGame.Services
                             ADD COLUMN role VARCHAR(20) DEFAULT 'user' NOT NULL";
 
                         using (var alterCmd = new MySqlCommand(addRoleColumnQuery, _connection))
+                        {
+                            alterCmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+
+                // 检查并添加rating列（如果不存在）
+                string checkRatingColumnQuery = @"
+                    SELECT COUNT(*) 
+                    FROM information_schema.COLUMNS 
+                    WHERE TABLE_SCHEMA = 'sudoku_game' 
+                    AND TABLE_NAME = 'users' 
+                    AND COLUMN_NAME = 'rating'";
+
+                using (var cmd = new MySqlCommand(checkRatingColumnQuery, _connection))
+                {
+                    if (Convert.ToInt32(cmd.ExecuteScalar()) == 0)
+                    {
+                        // rating列不存在，添加它
+                        string addRatingColumnQuery = @"
+                            ALTER TABLE users 
+                            ADD COLUMN rating INT DEFAULT 1500 NOT NULL";
+
+                        using (var alterCmd = new MySqlCommand(addRatingColumnQuery, _connection))
                         {
                             alterCmd.ExecuteNonQuery();
                         }
@@ -773,62 +798,6 @@ namespace SudokuGame.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"添加比赛题目失败: {ex.Message}");
-                return false;
-            }
-        }
-
-        public List<SudokuPuzzle> GetOfficialPuzzles()
-        {
-            var puzzles = new List<SudokuPuzzle>();
-            string query = @"
-                SELECT * FROM sudoku_puzzles 
-                WHERE is_official = 1 
-                ORDER BY created_at DESC";
-
-            using (var cmd = new MySqlCommand(query, _connection))
-            {
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        puzzles.Add(new SudokuPuzzle
-                        {
-                            Id = reader.GetInt32("id"),
-                            InitialBoard = reader.GetString("initial_board"),
-                            CurrentBoard = reader.GetString("initial_board"),
-                            Solution = reader.GetString("solution"),
-                            Difficulty = reader.GetString("difficulty"),
-                            CreatedAt = reader.GetDateTime("created_at"),
-                            LastPlayedAt = null,
-                            TotalPlayTime = TimeSpan.Zero,
-                            IsCompleted = false,
-                            IsOfficial = true
-                        });
-                    }
-                }
-            }
-            return puzzles;
-        }
-
-        public bool HasUserFavoritedPuzzle(int userId, int puzzleId)
-        {
-            try
-            {
-                string query = @"
-                    SELECT COUNT(*) 
-                    FROM user_puzzles 
-                    WHERE user_id = @userId AND puzzle_id = @puzzleId";
-
-                using (var cmd = new MySqlCommand(query, _connection))
-                {
-                    cmd.Parameters.AddWithValue("@userId", userId);
-                    cmd.Parameters.AddWithValue("@puzzleId", puzzleId);
-                    return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"检查题目收藏状态时出错: {ex.Message}");
                 return false;
             }
         }
