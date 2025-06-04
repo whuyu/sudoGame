@@ -555,8 +555,17 @@ namespace SudokuGame.Views
             {
                 if (!_isFavorited)
                 {
-                    // 收藏题目
-                    _databaseService.FavoritePuzzle(currentPuzzle, _userId);
+                    // 如果是新题目（ID为0），先保存题目
+                    if (currentPuzzle.Id == 0)
+                    {
+                        _databaseService.(currentPuzzle, _userId);
+                    }
+                    else
+                    {
+                        // 如果题目已存在，直接收藏
+                        _databaseService.FavoritePuzzle(currentPuzzle, _userId);
+                    }
+                    
                     _isFavorited = true;
                     if (favoriteButton != null)
                     {
