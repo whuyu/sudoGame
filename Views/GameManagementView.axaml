@@ -202,7 +202,7 @@
                             </ComboBox>
                             
                             <Button Grid.Column="1"
-                                    Content="生成新题目"
+                                    Content="创建官方题目"
                                     Height="40"
                                     Margin="10,0,0,0"
                                     Name="GeneratePuzzleButton"

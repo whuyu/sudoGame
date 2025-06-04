@@ -407,6 +407,42 @@ namespace SudokuGame.Views
                     Grid.SetRowSpan(gameManagementView, 4);
                     contentArea.Children.Add(gameManagementView);
                     break;
+                case "官方题单":
+                    var officialPuzzleView = new OfficialPuzzleView();
+                    officialPuzzleView.OnPuzzleSelected += (sender, puzzle) =>
+                    {
+                        try
+                        {
+                            Debug.WriteLine("开始加载官方题目...");
+                            _isLoadingExistingPuzzle = true;
+                            
+                            // 切换到游戏面板
+                            gamePanel.IsVisible = true;
+                            if (officialPuzzleView.Parent == contentArea)
+                            {
+                                contentArea.Children.Remove(officialPuzzleView);
+                            }
+
+                            // 更新导航栏选中项
+                            var navList = this.FindControl<ListBox>("NavList");
+                            if (navList != null)
+                            {
+                                navList.SelectedIndex = 1; // "随机一题"的索引
+                            }
+
+                            // 加载题目，指定不是从我的题库加载
+                            LoadExistingPuzzle(puzzle, false);
+                            Debug.WriteLine("官方题目加载完成");
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"加载官方题目时出错: {ex.Message}");
+                        }
+                    };
+                    Grid.SetRow(officialPuzzleView, 0);
+                    Grid.SetRowSpan(officialPuzzleView, 4);
+                    contentArea.Children.Add(officialPuzzleView);
+                    break;
             }
         }
 
@@ -517,8 +553,8 @@ namespace SudokuGame.Views
             {
                 if (!_isFavorited)
                 {
-                    // 保存到数据库
-                    _databaseService.SavePuzzle(currentPuzzle, _userId);
+                    // 收藏题目
+                    _databaseService.FavoritePuzzle(currentPuzzle, _userId);
                     _isFavorited = true;
                     if (favoriteButton != null)
                     {
@@ -803,8 +839,8 @@ namespace SudokuGame.Views
                     navList.SelectedIndex = 1; // "随机一题"的索引
                 }
 
-                // 加载题目
-                LoadExistingPuzzle(puzzle);
+                // 加载题目，指定是从我的题库加载
+                LoadExistingPuzzle(puzzle, true);
                 Debug.WriteLine("题目加载完成");
             }
             catch (Exception ex)
@@ -813,13 +849,24 @@ namespace SudokuGame.Views
             }
         }
 
-        private void LoadExistingPuzzle(SudokuPuzzle puzzle)
+        private void LoadExistingPuzzle(SudokuPuzzle puzzle, bool isFromMyPuzzles = false)
         {
             currentPuzzle = puzzle;
-            _isFavorited = true; // 设置为已收藏状态
+            
+            // 如果是从我的题库进入，一定是已收藏的
+            // 如果是从其他地方进入，需要检查是否已收藏
+            _isFavorited = isFromMyPuzzles || _databaseService.HasUserFavoritedPuzzle(_userId, puzzle.Id);
+            
             if (favoriteButton != null)
             {
-                favoriteButton.Classes.Add("active");
+                if (_isFavorited)
+                {
+                    favoriteButton.Classes.Add("active");
+                }
+                else
+                {
+                    favoriteButton.Classes.Remove("active");
+                }
             }
 
             // 将字符串转换为数独数组

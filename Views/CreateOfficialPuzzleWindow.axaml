@@ -1,0 +1,27 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SudokuGame.Views.CreateOfficialPuzzleWindow"
+        Title="创建官方题目"
+        Width="500" Height="600"
+        WindowStartupLocation="CenterOwner">
+    
+    <Grid Name="MainGrid" RowDefinitions="Auto,*,Auto,Auto" Margin="20">
+        <TextBlock Grid.Row="0" Text="请填写数独题目内容（空格留空即可）" Margin="0,0,0,10"/>
+        
+        <!-- 数独面板 -->
+        <Grid Grid.Row="1" Name="SudokuGrid" 
+              Width="450" Height="450"
+              ColumnDefinitions="*,*,*,*,*,*,*,*,*"
+              RowDefinitions="*,*,*,*,*,*,*,*,*">
+            <!-- 单元格将在代码中动态生成 -->
+        </Grid>
+
+        <!-- 消息显示区域在Row 2 -->
+        
+        <!-- 底部按钮 -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0" Spacing="20">
+            <Button Name="ConfirmButton" Content="确认创建" Click="ConfirmButton_Click"/>
+            <Button Name="CancelButton" Content="取消" Click="CancelButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window> 

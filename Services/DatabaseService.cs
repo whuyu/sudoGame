@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using BCrypt.Net;
 using SudokuGame.Models;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace SudokuGame.Services
 {
@@ -105,6 +106,7 @@ namespace SudokuGame.Services
                         initial_board VARCHAR(81) NOT NULL,
                         solution VARCHAR(81) NOT NULL,
                         difficulty VARCHAR(10) NOT NULL,
+                        is_official BOOLEAN DEFAULT FALSE,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );";
 
@@ -196,6 +198,7 @@ namespace SudokuGame.Services
             var puzzles = new List<SudokuPuzzle>();
             string query = @"
                 SELECT p.id, p.initial_board, p.solution, p.difficulty, p.created_at,
+                       p.is_official,
                        up.current_board, up.last_played_at, up.total_play_time, up.is_completed
                 FROM sudoku_puzzles p
                 INNER JOIN user_puzzles up ON p.id = up.puzzle_id
@@ -221,7 +224,8 @@ namespace SudokuGame.Services
                                 ? null 
                                 : reader.GetDateTime("last_played_at"),
                             TotalPlayTime = TimeSpan.FromSeconds(reader.GetInt32("total_play_time")),
-                            IsCompleted = reader.GetBoolean("is_completed")
+                            IsCompleted = reader.GetBoolean("is_completed"),
+                            IsOfficial = reader.GetBoolean("is_official")
                         });
                     }
                 }
@@ -229,24 +233,67 @@ namespace SudokuGame.Services
             return puzzles;
         }
 
-        public void SavePuzzle(SudokuPuzzle puzzle, int userId)
+        public void FavoritePuzzle(SudokuPuzzle puzzle, int userId)
         {
-            string puzzleQuery = @"
-                INSERT INTO sudoku_puzzles (
-                    initial_board, solution, difficulty
-                ) VALUES (
-                    @initialBoard, @solution, @difficulty
-                )";
-
-            using (var cmd = new MySqlCommand(puzzleQuery, _connection))
+            try
             {
-                cmd.Parameters.AddWithValue("@initialBoard", puzzle.InitialBoard);
-                cmd.Parameters.AddWithValue("@solution", puzzle.Solution);
-                cmd.Parameters.AddWithValue("@difficulty", puzzle.Difficulty);
-                cmd.ExecuteNonQuery();
-                
-                // 获取自动生成的ID
-                puzzle.Id = (int)cmd.LastInsertedId;
+                // 检查是否已经收藏
+                if (HasUserFavoritedPuzzle(userId, puzzle.Id))
+                {
+                    return; // 如果已经收藏，直接返回
+                }
+
+                // 创建用户-题目关系
+                string userPuzzleQuery = @"
+                    INSERT INTO user_puzzles (
+                        user_id, puzzle_id, current_board,
+                        last_played_at, total_play_time, is_completed
+                    ) VALUES (
+                        @userId, @puzzleId, @currentBoard,
+                        @lastPlayedAt, @totalPlayTime, @isCompleted
+                    )";
+
+                using (var cmd = new MySqlCommand(userPuzzleQuery, _connection))
+                {
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    cmd.Parameters.AddWithValue("@puzzleId", puzzle.Id);
+                    cmd.Parameters.AddWithValue("@currentBoard", puzzle.CurrentBoard);
+                    cmd.Parameters.AddWithValue("@lastPlayedAt", puzzle.LastPlayedAt ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@totalPlayTime", (int)puzzle.TotalPlayTime.TotalSeconds);
+                    cmd.Parameters.AddWithValue("@isCompleted", puzzle.IsCompleted);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"收藏题目时出错: {ex.Message}");
+                throw;
+            }
+        }
+
+        public void SavePuzzle(SudokuPuzzle puzzle, int userId, bool isOfficial = false)
+        {
+            // 如果题目已经存在（有ID），则不需要重新创建题目
+            if (puzzle.Id == 0)
+            {
+                string puzzleQuery = @"
+                    INSERT INTO sudoku_puzzles (
+                        initial_board, solution, difficulty, is_official
+                    ) VALUES (
+                        @initialBoard, @solution, @difficulty, @isOfficial
+                    )";
+
+                using (var cmd = new MySqlCommand(puzzleQuery, _connection))
+                {
+                    cmd.Parameters.AddWithValue("@initialBoard", puzzle.InitialBoard);
+                    cmd.Parameters.AddWithValue("@solution", puzzle.Solution);
+                    cmd.Parameters.AddWithValue("@difficulty", puzzle.Difficulty);
+                    cmd.Parameters.AddWithValue("@isOfficial", isOfficial);
+                    cmd.ExecuteNonQuery();
+                    
+                    // 获取自动生成的ID
+                    puzzle.Id = (int)cmd.LastInsertedId;
+                }
             }
 
             // 创建用户-题目关系
@@ -678,7 +725,8 @@ namespace SudokuGame.Services
                             InitialBoard = reader.GetString("initial_board"),
                             Solution = reader.GetString("solution"),
                             Difficulty = reader.GetString("difficulty"),
-                            CreatedAt = reader.GetDateTime("created_at")
+                            CreatedAt = reader.GetDateTime("created_at"),
+                            IsOfficial = reader.GetBoolean("is_official")
                         });
                     }
                 }
@@ -725,6 +773,62 @@ namespace SudokuGame.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"添加比赛题目失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        public List<SudokuPuzzle> GetOfficialPuzzles()
+        {
+            var puzzles = new List<SudokuPuzzle>();
+            string query = @"
+                SELECT * FROM sudoku_puzzles 
+                WHERE is_official = 1 
+                ORDER BY created_at DESC";
+
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        puzzles.Add(new SudokuPuzzle
+                        {
+                            Id = reader.GetInt32("id"),
+                            InitialBoard = reader.GetString("initial_board"),
+                            CurrentBoard = reader.GetString("initial_board"),
+                            Solution = reader.GetString("solution"),
+                            Difficulty = reader.GetString("difficulty"),
+                            CreatedAt = reader.GetDateTime("created_at"),
+                            LastPlayedAt = null,
+                            TotalPlayTime = TimeSpan.Zero,
+                            IsCompleted = false,
+                            IsOfficial = true
+                        });
+                    }
+                }
+            }
+            return puzzles;
+        }
+
+        public bool HasUserFavoritedPuzzle(int userId, int puzzleId)
+        {
+            try
+            {
+                string query = @"
+                    SELECT COUNT(*) 
+                    FROM user_puzzles 
+                    WHERE user_id = @userId AND puzzle_id = @puzzleId";
+
+                using (var cmd = new MySqlCommand(query, _connection))
+                {
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    cmd.Parameters.AddWithValue("@puzzleId", puzzleId);
+                    return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"检查题目收藏状态时出错: {ex.Message}");
                 return false;
             }
         }

@@ -13,5 +13,6 @@ namespace SudokuGame.Models
         public TimeSpan TotalPlayTime { get; set; }             // 总游玩时间
         public bool IsCompleted { get; set; }                    // 是否完成
         public string Difficulty { get; set; } = "普通";        // 难度级别
+        public bool IsOfficial { get; set; } = false;           // 是否为官方题目
     }
 } 

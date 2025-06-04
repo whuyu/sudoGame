@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using SudokuGame.Models;
 using SudokuGame.Services;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SudokuGame.Views
 {
@@ -15,6 +16,7 @@ namespace SudokuGame.Views
         private readonly ObservableCollection<User> _users;
         private readonly ObservableCollection<SudokuPuzzle> _availablePuzzles;
         private readonly ObservableCollection<SudokuPuzzle> _selectedPuzzles;
+        private bool _isLoading = false;
 
         public GameManagementView(int userId)
         {
@@ -49,48 +51,84 @@ namespace SudokuGame.Views
             if (filterPuzzlesButton != null) filterPuzzlesButton.Click += FilterPuzzlesButton_Click;
             if (clearPuzzleSelectionButton != null) clearPuzzleSelectionButton.Click += ClearPuzzleSelectionButton_Click;
 
-            // 加载数据
-            LoadPuzzles();
-            LoadUsers();
-            LoadAvailablePuzzles();
+            // 异步加载数据
+            _ = LoadDataAsync();
         }
 
-        private void LoadPuzzles()
+        private async Task LoadDataAsync()
         {
+            if (_isLoading) return;
+            _isLoading = true;
+
+            try
+            {
+                await Task.WhenAll(
+                    LoadPuzzlesAsync(),
+                    LoadUsersAsync(),
+                    LoadAvailablePuzzlesAsync()
+                );
+            }
+            catch (Exception ex)
+            {
+                ShowError($"加载数据失败: {ex.Message}");
+            }
+            finally
+            {
+                _isLoading = false;
+            }
+        }
+
+        private async Task LoadPuzzlesAsync()
+        {
+            await Task.Run(() =>
+            {
+                _puzzles.Clear();
             // TODO: 从数据库加载题目列表
-            _puzzles.Clear();
+            });
         }
 
-        private void LoadUsers()
+        private async Task LoadUsersAsync()
         {
+            await Task.Run(() =>
+            {
+                _users.Clear();
             // TODO: 从数据库加载用户列表
-            _users.Clear();
+            });
         }
 
-        private void LoadAvailablePuzzles()
+        private async Task LoadAvailablePuzzlesAsync()
         {
+            if (_isLoading) return;
+
             var difficultyComboBox = this.FindControl<ComboBox>("PuzzleDifficultyComboBox");
             var selectedItem = difficultyComboBox?.SelectedItem as ComboBoxItem;
             string? selectedDifficulty = selectedItem?.Content?.ToString();
 
-            // 如果选择了"全部难度"，则传入 null
             if (selectedDifficulty == "全部难度")
             {
                 selectedDifficulty = null;
             }
 
-            _availablePuzzles.Clear();
-            var puzzles = _databaseService.GetAvailablePuzzles(selectedDifficulty);
-            foreach (var puzzle in puzzles)
+            await Task.Run(() =>
             {
-                _availablePuzzles.Add(puzzle);
-            }
-            UpdateSelectedPuzzlesCount();
+                _availablePuzzles.Clear();
+                var puzzles = _databaseService.GetAvailablePuzzles(selectedDifficulty);
+                
+                // 使用 Dispatcher 在 UI 线程上更新集合
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    foreach (var puzzle in puzzles)
+                    {
+                        _availablePuzzles.Add(puzzle);
+                    }
+                    UpdateSelectedPuzzlesCount();
+                });
+            });
         }
 
-        private void FilterPuzzlesButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private async void FilterPuzzlesButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            LoadAvailablePuzzles();
+            await LoadAvailablePuzzlesAsync();
         }
 
         private void AvailablePuzzlesList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -232,14 +270,16 @@ namespace SudokuGame.Views
             Console.WriteLine($"Success: {message}");
         }
 
-        private void GeneratePuzzleButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private async void GeneratePuzzleButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            // TODO: 实现生成新题目的逻辑
             var difficultyComboBox = this.FindControl<ComboBox>("DifficultyComboBox");
             var selectedDifficulty = ((ComboBoxItem)difficultyComboBox?.SelectedItem!)?.Content?.ToString() ?? "中等";
 
-            // 生成新题目
-            // ...
+            var createWindow = new CreateOfficialPuzzleWindow(selectedDifficulty);
+            await createWindow.ShowDialog(TopLevel.GetTopLevel(this) as Window);
+            
+            // 刷新题目列表
+            await LoadDataAsync();
         }
     }
 
