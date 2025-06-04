@@ -459,9 +459,29 @@ namespace SudokuGame.Services
             }
         }
 
+        // 更新比赛状态
+        private void UpdateContestStatus()
+        {
+            string query = @"
+                UPDATE contests 
+                SET status = CASE 
+                    WHEN start_time > NOW() THEN 'pending'
+                    WHEN start_time <= NOW() AND NOW() <= DATE_ADD(start_time, INTERVAL duration MINUTE) THEN 'ongoing'
+                    ELSE 'finished'
+                END";
+
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
         // 获取所有比赛列表
         public List<Contest> GetContests()
         {
+            // 先更新所有比赛状态
+            UpdateContestStatus();
+
             var contests = new List<Contest>();
             string query = @"
                 SELECT * FROM contests 
