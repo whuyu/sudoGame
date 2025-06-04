@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using BCrypt.Net;
 using SudokuGame.Models;
 using System.Threading.Tasks;
+using System.Linq;
 using System.Diagnostics;
 
 namespace SudokuGame.Services
@@ -16,7 +17,7 @@ namespace SudokuGame.Services
 
         public DatabaseService()
         {
-            _connectionString = "Server=localhost;Uid=root;Pwd=123456;Allow User Variables=True;";
+            _connectionString = "Server=localhost;Uid=root;Pwd=20234108@123;Allow User Variables=True;";
             _connection = new MySqlConnection(_connectionString);
             InitializeDatabase();
         }
@@ -93,6 +94,30 @@ namespace SudokuGame.Services
                             ADD COLUMN role VARCHAR(20) DEFAULT 'user' NOT NULL";
 
                         using (var alterCmd = new MySqlCommand(addRoleColumnQuery, _connection))
+                        {
+                            alterCmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+
+                // 检查并添加rating列（如果不存在）
+                string checkRatingColumnQuery = @"
+                    SELECT COUNT(*) 
+                    FROM information_schema.COLUMNS 
+                    WHERE TABLE_SCHEMA = 'sudoku_game' 
+                    AND TABLE_NAME = 'users' 
+                    AND COLUMN_NAME = 'rating'";
+
+                using (var cmd = new MySqlCommand(checkRatingColumnQuery, _connection))
+                {
+                    if (Convert.ToInt32(cmd.ExecuteScalar()) == 0)
+                    {
+                        // rating列不存在，添加它
+                        string addRatingColumnQuery = @"
+                            ALTER TABLE users 
+                            ADD COLUMN rating INT DEFAULT 1500 NOT NULL";
+
+                        using (var alterCmd = new MySqlCommand(addRatingColumnQuery, _connection))
                         {
                             alterCmd.ExecuteNonQuery();
                         }
@@ -775,6 +800,134 @@ namespace SudokuGame.Services
                 Console.WriteLine($"添加比赛题目失败: {ex.Message}");
                 return false;
             }
+        }
+
+        // 获取用户rating
+        public int GetUserRating(int userId)
+        {
+            string query = "SELECT rating FROM users WHERE id = @userId";
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddWithValue("@userId", userId);
+                var result = cmd.ExecuteScalar();
+                return result != null ? Convert.ToInt32(result) : 1500; // 默认rating为1500
+            }
+        }
+
+        // 更新用户rating
+        public void UpdateUserRating(int userId, int newRating)
+        {
+            string query = "UPDATE users SET rating = @rating WHERE id = @userId";
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@rating", newRating);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        // 获取全局排行榜
+        public List<UserRating> GetGlobalLeaderboard()
+        {
+            var leaderboard = new List<UserRating>();
+            string query = @"
+                SELECT id, username, rating 
+                FROM users 
+                ORDER BY rating DESC 
+                LIMIT 100";
+
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        leaderboard.Add(new UserRating
+                        {
+                            UserId = reader.GetInt32("id"),
+                            Username = reader.GetString("username"),
+                            Rating = reader.GetInt32("rating")
+                        });
+                    }
+                }
+            }
+            return leaderboard;
+        }
+
+        // 计算并更新比赛后的rating
+        public void UpdateRatingsAfterContest(int contestId)
+        {
+            var participants = GetContestLeaderboard(contestId);
+            if (participants.Count < 2) return;
+
+            // 获取所有参与者的当前rating
+            var ratings = participants.ToDictionary(
+                p => p.UserId,
+                p => GetUserRating(p.UserId)
+            );
+
+            // 计算每个参与者的新rating
+            foreach (var participant in participants)
+            {
+                int currentRating = ratings[participant.UserId];
+                int rank = participants.IndexOf(participant) + 1;
+                int completedPuzzles = participant.CompletedPuzzles;
+                
+                // 计算预期排名
+                double expectedRank = 1 + (participants.Count - 1) * (1 - (double)completedPuzzles / participants.Max(p => p.CompletedPuzzles));
+                
+                // 计算rating变化
+                int ratingChange = CalculateRatingChange(currentRating, rank, expectedRank, completedPuzzles, participants.Count);
+                int newRating = Math.Max(1000, currentRating + ratingChange); // 最低rating为1000
+                
+                // 更新rating
+                UpdateUserRating(participant.UserId, newRating);
+            }
+        }
+
+        private int CalculateRatingChange(int currentRating, int actualRank, double expectedRank, int completedPuzzles, int totalParticipants)
+        {
+            // K因子：根据完成题目数调整变化幅度
+            double K = 32.0 * (1.0 + completedPuzzles * 0.1);
+            
+            // 计算表现差异
+            double performanceDiff = expectedRank - actualRank;
+            
+            // 计算rating变化
+            int ratingChange = (int)(K * (performanceDiff / totalParticipants));
+            
+            // 限制单次变化幅度
+            return Math.Max(-100, Math.Min(100, ratingChange));
+        }
+
+        public List<User> GetAllUsers()
+        {
+            var users = new List<User>();
+            using (var connection = new MySqlConnection($"{_connectionString};Database=sudoku_game;"))
+            {
+                connection.Open();
+                var command = new MySqlCommand(
+                    @"SELECT id, username, role, created_at, rating 
+                      FROM users 
+                      ORDER BY rating DESC", 
+                    connection);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        users.Add(new User
+                        {
+                            Id = reader.GetInt32("id"),
+                            Username = reader.GetString("username"),
+                            Role = reader.GetString("role"),
+                            CreatedAt = reader.GetDateTime("created_at"),
+                            Rating = reader.GetInt32("rating")
+                        });
+                    }
+                }
+            }
+            return users;
         }
 
         public List<SudokuPuzzle> GetOfficialPuzzles()
