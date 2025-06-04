@@ -99,6 +99,17 @@ namespace SudokuGame.Views
             {
                 _timer.Stop();
                 if (timeBlock != null) timeBlock.Text = "比赛已结束";
+                
+                // 比赛结束时更新rating
+                try
+                {
+                    _databaseService.UpdateRatingsAfterContest(_contestId);
+                    Debug.WriteLine("比赛结束，rating更新完成");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"更新rating失败: {ex.Message}");
+                }
                 return;
             }
 
@@ -125,7 +136,7 @@ namespace SudokuGame.Views
                 var puzzleItems = puzzles.Select((puzzle, index) => new PuzzleItem
                 {
                     Title = $"题目 {index + 1}",
-                    Status = "未完成",
+                    Status = "",
                     Puzzle = puzzle,
                     Index = index
                 }).ToList();
