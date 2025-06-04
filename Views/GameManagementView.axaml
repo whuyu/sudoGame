@@ -81,8 +81,7 @@
                                          Margin="0,0,0,10"/>
 
                                 <NumericUpDown Name="ContestDurationUpDown"
-                                             Minimum="30"
-                                             Maximum="180"
+                                             Minimum="0"
                                              Value="60"
                                              Increment="30"
                                              Height="40"
