@@ -19,6 +19,7 @@ namespace SudokuGame.Views
         private Contest _contest;
         private DispatcherTimer _timer;
         private DateTime _endTime;
+        private bool _ratingUpdated = false;
 
         public ContestView(int contestId, int userId)
         {
@@ -100,7 +101,7 @@ namespace SudokuGame.Views
                 _timer.Stop();
                 if (timeBlock != null) timeBlock.Text = "比赛已结束";
                 
-                // 比赛结束时更新rating
+                // 更新rating（如果尚未更新）
                 try
                 {
                     _databaseService.UpdateRatingsAfterContest(_contestId);
