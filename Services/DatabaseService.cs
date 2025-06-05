@@ -17,7 +17,7 @@ namespace SudokuGame.Services
 
         public DatabaseService()
         {
-            _connectionString = "Server=localhost;Uid=root;Pwd=20234108@123;Allow User Variables=True;";
+            _connectionString = "Server=localhost;Uid=root;Pwd=123456;Allow User Variables=True;";
             _connection = new MySqlConnection(_connectionString);
             InitializeDatabase();
         }
