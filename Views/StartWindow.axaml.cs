@@ -176,6 +176,13 @@ namespace SudokuGame.Views
                 return;
             }
 
+            // 验证用户名格式
+            if (!databaseService.ValidateUsername(username))
+            {
+                ShowError("用户名格式不正确！\n用户名规则：4-16个字符，只能包含字母、数字和下划线，必须以字母开头");
+                return;
+            }
+
             if (password != confirmPassword)
             {
                 ShowError("两次输入的密码不一致");

@@ -7,6 +7,7 @@ using SudokuGame.Models;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace SudokuGame.Services
 {
@@ -1038,5 +1039,14 @@ namespace SudokuGame.Services
                 return false;
             }
         }
+
+        // 验证用户名格式
+        public bool ValidateUsername(string username)
+        {
+            // 用户名规则：4-16个字符，只能包含字母、数字和下划线，必须以字母开头
+            string pattern = @"^[a-zA-Z][a-zA-Z0-9_]{3,15}$";
+            return Regex.IsMatch(username, pattern);
+        }
+
     }
 } 
