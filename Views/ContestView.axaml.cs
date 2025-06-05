@@ -8,6 +8,7 @@ using System.Linq;
 using SudokuGame.Models;
 using SudokuGame.Services;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace SudokuGame.Views
 {
@@ -91,6 +92,14 @@ namespace SudokuGame.Views
             }
         }
 
+        private string FormatTimeDisplay(TimeSpan time)
+        {
+            string hours = Regex.Replace(time.Hours.ToString(), @"^(\d)$", "0$1");
+            string minutes = Regex.Replace(time.Minutes.ToString(), @"^(\d)$", "0$1");
+            string seconds = Regex.Replace(time.Seconds.ToString(), @"^(\d)$", "0$1");
+            return $"{hours}:{minutes}:{seconds}";
+        }
+
         private void Timer_Tick(object sender, EventArgs e)
         {
             var remaining = _endTime - DateTime.Now;
@@ -119,7 +128,7 @@ namespace SudokuGame.Views
 
             if (timeBlock != null)
             {
-                timeBlock.Text = $"剩余时间：{remaining.Hours:D2}:{remaining.Minutes:D2}:{remaining.Seconds:D2}";
+                timeBlock.Text = $"剩余时间：{FormatTimeDisplay(remaining)}";
             }
 
             // 每秒刷新一次排行榜

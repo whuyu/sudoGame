@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SudokuGame.Models;
 using SudokuGame.Services;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace SudokuGame.Views
 {
