@@ -17,7 +17,7 @@ namespace SudokuGame.Services
 
         public DatabaseService()
         {
-            _connectionString = "Server=localhost;Uid=root;Pwd=123456;Allow User Variables=True;";
+            _connectionString = "Server=localhost;Uid=root;Pwd=20234108@123;Allow User Variables=True;";
             _connection = new MySqlConnection(_connectionString);
             InitializeDatabase();
         }
@@ -169,8 +169,9 @@ namespace SudokuGame.Services
                         description TEXT,
                         start_time DATETIME NOT NULL,
                         duration INT NOT NULL COMMENT '比赛时长（分钟）',
-                        status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending, ongoing, finished',
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        rating_updated BOOLEAN NOT NULL DEFAULT FALSE
                     );";
 
                 using (var cmd = new MySqlCommand(createContestsTableQuery, _connection))
@@ -874,9 +875,38 @@ namespace SudokuGame.Services
             return leaderboard;
         }
 
+        // 检查比赛rating是否已更新
+        public bool IsContestRatingUpdated(int contestId)
+        {
+            string query = "SELECT rating_updated FROM contests WHERE id = @contestId";
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddWithValue("@contestId", contestId);
+                var result = cmd.ExecuteScalar();
+                return result != null && Convert.ToBoolean(result);
+            }
+        }
+
+        // 标记比赛rating已更新
+        public void MarkContestRatingUpdated(int contestId)
+        {
+            string query = "UPDATE contests SET rating_updated = true WHERE id = @contestId";
+            using (var cmd = new MySqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddWithValue("@contestId", contestId);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
         // 计算并更新比赛后的rating
         public void UpdateRatingsAfterContest(int contestId)
         {
+            // 检查rating是否已经更新过
+            if (IsContestRatingUpdated(contestId))
+            {
+                return;
+            }
+
             var participants = GetContestLeaderboard(contestId);
             if (participants.Count < 2) return;
 
@@ -903,6 +933,9 @@ namespace SudokuGame.Services
                 // 更新rating
                 UpdateUserRating(participant.UserId, newRating);
             }
+
+            // 标记rating已更新
+            MarkContestRatingUpdated(contestId);
         }
 
         private int CalculateRatingChange(int currentRating, int actualRank, double expectedRank, int completedPuzzles, int totalParticipants)
