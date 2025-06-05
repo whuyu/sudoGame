@@ -34,6 +34,11 @@
                         Content="新建题目" 
                         Background="#409EFF"
                         Foreground="White"/>
+                <Button Name="ExportButton"
+                        Content="导出题库"
+                        Background="#67C23A"
+                        Foreground="White"
+                        Margin="10,0,0,0"/>
             </WrapPanel>
         </StackPanel>
 

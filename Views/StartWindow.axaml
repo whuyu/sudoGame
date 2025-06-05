@@ -103,7 +103,7 @@
             </Button>
 
             <!-- 版权信息 -->
-            <TextBlock Text="© 2024 数独游戏"
+            <TextBlock Text="© 2025 数独游戏"
                      FontSize="12"
                      Foreground="#999999"
                      HorizontalAlignment="Center"

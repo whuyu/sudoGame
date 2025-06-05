@@ -8,6 +8,8 @@ using SudokuGame.Services;
 using Avalonia;
 using Avalonia.VisualTree;
 using System.Diagnostics;
+using NPOI.XSSF.UserModel;
+using System.IO;
 
 namespace SudokuGame.Views
 {
@@ -20,6 +22,7 @@ namespace SudokuGame.Views
         private readonly SudokuGenerator _sudokuGenerator;
         private readonly ComboBox _difficultyComboBox;
         private readonly Button _createButton;
+        private readonly Button _exportButton;
 
         // 定义一个事件来通知需要切换到游戏页面
         public event EventHandler<SudokuPuzzle>? OnPuzzleSelected;
@@ -41,6 +44,7 @@ namespace SudokuGame.Views
             puzzlesItemsControl = this.FindControl<ItemsControl>("PuzzlesItemsControl") ?? throw new InvalidOperationException("PuzzlesItemsControl not found");
             _difficultyComboBox = this.FindControl<ComboBox>("DifficultyComboBox") ?? throw new InvalidOperationException("DifficultyComboBox not found");
             _createButton = this.FindControl<Button>("CreateButton") ?? throw new InvalidOperationException("CreateButton not found");
+            _exportButton = this.FindControl<Button>("ExportButton") ?? throw new InvalidOperationException("ExportButton not found");
             
             // 设置数据源
             puzzlesItemsControl.ItemsSource = puzzles;
@@ -51,6 +55,7 @@ namespace SudokuGame.Views
 
             // 设置事件处理器
             _createButton.Click += CreateButton_Click;
+            _exportButton.Click += ExportButton_Click;
 
             // 加载题目列表
             LoadPuzzles();
@@ -267,6 +272,103 @@ namespace SudokuGame.Views
                     };
                     await errorWindow.ShowDialog(TopLevel.GetTopLevel(this) as Window);
                 }
+            }
+        }
+
+        private async void ExportButton_Click(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // 获取用户题库
+                var userPuzzles = _databaseService.GetUserPuzzles(_userId);
+                if (userPuzzles.Count == 0)
+                {
+                    var noDataWindow = new Window
+                    {
+                        Title = "提示",
+                        Content = "没有可导出的题目！",
+                        Width = 200,
+                        Height = 100,
+                        WindowStartupLocation = WindowStartupLocation.CenterOwner
+                    };
+                    await noDataWindow.ShowDialog(TopLevel.GetTopLevel(this) as Window);
+                    return;
+                }
+
+                // 选择保存路径
+                var sfd = new SaveFileDialog
+                {
+                    Title = "导出题库",
+                    Filters = new List<FileDialogFilter> { new FileDialogFilter { Name = "Excel 文件", Extensions = { "xlsx" } } },
+                    InitialFileName = "我的题库.xlsx"
+                };
+                var window = TopLevel.GetTopLevel(this) as Window;
+                var filePath = await sfd.ShowAsync(window);
+                if (string.IsNullOrEmpty(filePath)) return;
+
+                // 使用NPOI生成Excel
+                var workbook = new XSSFWorkbook();
+                var sheet = workbook.CreateSheet("我的题库");
+
+                // 写表头
+                var header = sheet.CreateRow(0);
+                header.CreateCell(0).SetCellValue("ID");
+                header.CreateCell(1).SetCellValue("难度");
+                header.CreateCell(2).SetCellValue("创建时间");
+                header.CreateCell(3).SetCellValue("游玩时间(秒)");
+                header.CreateCell(4).SetCellValue("是否完成");
+                header.CreateCell(5).SetCellValue("初始盘面");
+                header.CreateCell(6).SetCellValue("当前盘面");
+                header.CreateCell(7).SetCellValue("答案");
+
+                // 写数据
+                for (int i = 0; i < userPuzzles.Count; i++)
+                {
+                    var p = userPuzzles[i];
+                    var row = sheet.CreateRow(i + 1);
+                    row.CreateCell(0).SetCellValue(p.Id);
+                    row.CreateCell(1).SetCellValue(p.Difficulty);
+                    row.CreateCell(2).SetCellValue(p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
+                    row.CreateCell(3).SetCellValue(p.TotalPlayTime.TotalSeconds);
+                    row.CreateCell(4).SetCellValue(p.IsCompleted ? "是" : "否");
+                    row.CreateCell(5).SetCellValue(p.InitialBoard);
+                    row.CreateCell(6).SetCellValue(p.CurrentBoard);
+                    row.CreateCell(7).SetCellValue(p.Solution);
+                }
+
+                // 自动列宽
+                for (int i = 0; i <= 7; i++)
+                {
+                    sheet.AutoSizeColumn(i);
+                }
+
+                // 保存到文件
+                using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+                {
+                    workbook.Write(fs);
+                }
+
+                var successWindow = new Window
+                {
+                    Title = "成功",
+                    Content = "题库已成功导出！",
+                    Width = 200,
+                    Height = 100,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                await successWindow.ShowDialog(window);
+            }
+            catch (Exception ex)
+            {
+                var errorWindow = new Window
+                {
+                    Title = "错误",
+                    Content = $"导出失败: {ex.Message}",
+                    Width = 300,
+                    Height = 150,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+                await errorWindow.ShowDialog(TopLevel.GetTopLevel(this) as Window);
             }
         }
     }
