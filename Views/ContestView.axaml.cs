@@ -105,6 +105,9 @@ namespace SudokuGame.Views
                 {
                     _databaseService.UpdateRatingsAfterContest(_contestId);
                     Debug.WriteLine("比赛结束，rating更新完成");
+                    
+                    // 比赛结束后更新一次排行榜
+                    LoadLeaderboard();
                 }
                 catch (Exception ex)
                 {
@@ -119,10 +122,7 @@ namespace SudokuGame.Views
             }
 
             // 每秒刷新一次排行榜
-            if (DateTime.Now.Second % 1 == 0)
-            {
-                LoadLeaderboard();
-            }
+            LoadLeaderboard();
         }
 
         private async void LoadPuzzles()
