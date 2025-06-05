@@ -558,7 +558,7 @@ namespace SudokuGame.Views
                     // 如果是新题目（ID为0），先保存题目
                     if (currentPuzzle.Id == 0)
                     {
-                        _databaseService.(currentPuzzle, _userId);
+                        _databaseService.SavePuzzle(currentPuzzle, _userId);
                     }
                     else
                     {
