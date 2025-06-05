@@ -23,6 +23,7 @@ namespace SudokuGame.Views
         private Random random = new Random();
         private bool isGameStarted = false;
         private Stopwatch gameStopwatch = new();
+        private TimeSpan initialPlayTime = TimeSpan.Zero;
         private DispatcherTimer displayTimer = new();
         private Grid gamePanel;
         private Grid contentArea;
@@ -452,7 +453,7 @@ namespace SudokuGame.Views
         {
             if (gameStopwatch.IsRunning)
             {
-                var elapsed = gameStopwatch.Elapsed;
+                var elapsed = gameStopwatch.Elapsed + initialPlayTime;
                 var timerDisplay = this.FindControl<TextBlock>("TimerDisplay");
                 if (timerDisplay != null)
                 {
@@ -499,6 +500,7 @@ namespace SudokuGame.Views
         private void GenerateNewGame()
         {
             gameStopwatch.Reset();
+            initialPlayTime = TimeSpan.Zero;
             displayTimer.Stop();
             var timerDisplay = this.FindControl<TextBlock>("TimerDisplay");
             if (timerDisplay != null)
@@ -922,14 +924,11 @@ namespace SudokuGame.Views
             // 设置游戏时间
             gameStopwatch.Reset();
             displayTimer.Stop();
+            initialPlayTime = puzzle.TotalPlayTime;
             var timerDisplay = this.FindControl<TextBlock>("TimerDisplay");
-            if (timerDisplay != null && puzzle.TotalPlayTime != TimeSpan.Zero)
+            if (timerDisplay != null)
             {
-                timerDisplay.Text = $"{puzzle.TotalPlayTime.Minutes:D2}:{puzzle.TotalPlayTime.Seconds:D2}:{puzzle.TotalPlayTime.Milliseconds:D3}";
-            }
-            else if (timerDisplay != null)
-            {
-                timerDisplay.Text = "00:00:000";
+                timerDisplay.Text = $"{initialPlayTime.Minutes:D2}:{initialPlayTime.Seconds:D2}:{initialPlayTime.Milliseconds:D3}";
             }
 
             isGameStarted = false;
@@ -1017,7 +1016,8 @@ namespace SudokuGame.Views
 
                 // 更新最后游玩时间和总游玩时间
                 currentPuzzle.LastPlayedAt = DateTime.Now;
-                currentPuzzle.TotalPlayTime = gameStopwatch.Elapsed;
+                // 总游玩时间应该是初始时间加上新增的游戏时间
+                currentPuzzle.TotalPlayTime = initialPlayTime + gameStopwatch.Elapsed;
 
                 // 如果是新题目（未收藏），先保存题目
                 if (currentPuzzle.Id == 0)
